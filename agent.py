@@ -50,3 +50,10 @@ class AIAgent(Agent):
     def action(self, meeting=None, percept=None, message=None):
         pass
     
+# agent that moves randomly    
+class RandomAgent(AIAgent):
+    
+    def action(self, meeting=None, percept=None, message=None):
+        safe_moves = self.select_safe_moves()
+        next_move = random.choice(safe_moves)
+        return next_move

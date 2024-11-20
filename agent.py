@@ -5,8 +5,12 @@ import random
 
 class Agent(ABC):
     
-    position = (0, 0)
+    # current position on the grid (determined by the environment)
+    position = [0, 0]
+    # needs the agent to stay on the grid
     grid_size = 0
+    # 0 -> not in a game, ID -> in a game, dead -> dead
+    ID = 0
     
     gold = 0
     arrows = 0

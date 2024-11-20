@@ -45,6 +45,16 @@ class AIAgent(Agent):
     
         safe_moves = []
         
+        # check if the agent is at the edge of the grid
+        if self.position[0] == 0:
+            is_move_safe["up"] = False
+        if self.position[0] == self.grid_size - 1:
+            is_move_safe["down"] = False
+        if self.position[1] == 0:
+            is_move_safe["left"] = False
+        if self.position[1] == self.grid_size - 1:
+            is_move_safe["right"] = False    
+                    
         for move, isSafe in is_move_safe.items():
             if isSafe:
                 safe_moves.append(move)

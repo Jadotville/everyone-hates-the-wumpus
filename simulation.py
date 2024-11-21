@@ -20,7 +20,8 @@ if __name__ == '__main__':
     
     game_properties = {
         "num_games": 1,
+        "prints": True,
     }
     
     
-    game = Game(agents, game_properties, grid_properties)
+    game = Game(agents, grid_properties, game_properties)

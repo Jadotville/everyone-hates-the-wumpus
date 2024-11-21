@@ -6,10 +6,10 @@ class Game():
     items = []
     
     # executes the simulations
-    def __init__(self, agents, grid_properties, game_properties, prints=False):
+    def __init__(self, agents, grid_properties, game_properties):
+        prints = game_properties["prints"]
         for _ in range(game_properties["num_games"]):
             self.simulate(agents, grid_properties, prints)
-        return 0
 
 
     # simulates the game given the agents, grid properties
@@ -31,17 +31,21 @@ class Game():
         #runs the game loop
         # TODO: add break criteria
         for _ in range(10):
-        
+            
+            # TODO: messages
+            
+            # TODO: actions
+            
             # every agent makes a move
             for agent in agents:
-                action=agent.action()
-                if action== "up":
+                move = agent.move()
+                if move == "up":
                     agent.position[0]-=1
-                elif action== "down":
+                elif move == "down":
                     agent.position[0]+=1
-                elif action== "left":
+                elif move == "left":
                     agent.position[1]-=1
-                elif action== "right":
+                elif move == "right":
                     agent.position[1]+=1
             
             # updates the agent positions on the grid

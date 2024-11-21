@@ -119,9 +119,9 @@ class Game():
             return grid_copy     
     
     
-
+    # defines the result of a meeting between two agents
     def meeting(self, agent1, agent2):
-        action_agent1 = a    # defines the result of a meeting between two agentsgent1.meeting(action_agent2)
+        action_agent1 = agent1.meeting(action_agent2)
         action_agent2 = agent2.meeting(action_agent1)
         if action_agent1 == "rob":
             if action_agent2 == "rob":

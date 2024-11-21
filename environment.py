@@ -1,5 +1,9 @@
 class Game():   
     
+    pits = []
+    wumpi = []
+    
+    
     def __init__(self):
         pass
     
@@ -33,6 +37,8 @@ class Game():
             agents[3].position = [size - 1, size - 1]
             agents[3].grid_size = size
         
+        self.wumpi = []
+        self.pits = []
         
         # TODO: place pits
         # TODO: place wumpi
@@ -88,6 +94,17 @@ class Game():
             elif agent.position[1] < 0 or agent.position[1] >= len(grid):
                 agent.ID = 'dead'
             else:
+                
+                for wumpus in self.wumpi:
+                    if wumpus.position == agent.position:
+                        agent.ID = 'dead'
+                        break
+                    
+                for pit in self.pits:
+                    if pit.position == agent.position:
+                        agent.ID = 'dead'
+                        break
+                
                 for other_agent in agents:
                     if other_agent.ID == agent.ID:
                         continue

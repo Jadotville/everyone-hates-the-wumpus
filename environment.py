@@ -116,13 +116,13 @@ class Game():
                 else:
                     grid_copy[agent.position[0]][agent.position[1]] = grid_copy[agent.position[0]][agent.position[1]] + ' | ' + agent.ID
                 
-            return grid_copy     
+        return grid_copy
     
     
     # defines the result of a meeting between two agents
     def meeting(self, agent1, agent2):
-        action_agent1 = agent1.meeting(action_agent2)
-        action_agent2 = agent2.meeting(action_agent1)
+        action_agent1 = agent1.meeting(agent2)
+        action_agent2 = agent2.meeting(agent1)
         if action_agent1 == "rob":
             if action_agent2 == "rob":
                 # TODO: result?

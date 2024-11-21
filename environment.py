@@ -88,17 +88,66 @@ class Game():
             elif agent.position[1] < 0 or agent.position[1] >= len(grid):
                 agent.ID = 'dead'
             else:
-                grid_copy[agent.position[0]][agent.position[1]] = agent.ID             
-        
-            # TODO: what happens, if two agents are on the same position?
-            # TODO: what happens, if an agent is on a pit?
-            # TODO: what happens, if an agent is on a wumpus?
-        
-        return grid_copy     
-        
+                for other_agent in agents:
+                    if other_agent.ID == agent.ID:
+                        continue
+                    if other_agent.position == agent.position:
+                        self.meeting(agent, other_agent)
+                    
+                if grid_copy[agent.position[0]][agent.position[1]] == 0:
+                    grid_copy[agent.position[0]][agent.position[1]] = agent.ID             
+                else:
+                    grid_copy[agent.position[0]][agent.position[1]] = grid_copy[agent.position[0]][agent.position[1]] + ' | ' + agent.ID
+                
+            return grid_copy     
+    
+    
+
+    def meeting(self, agent1, agent2):
+        action_agent1 = a    # defines the result of a meeting between two agentsgent1.meeting(action_agent2)
+        action_agent2 = agent2.meeting(action_agent1)
+        if action_agent1 == "rob":
+            if action_agent2 == "rob":
+                # TODO: result?
+                pass
+            elif action_agent2 == "chat":
+                # TODO: result?
+                pass
+            elif action_agent2 == "nothing":
+                # TODO: result?
+                pass
+            else:
+                # TODO: errorhandling
+                pass
+        elif action_agent1 == "chat":
+            if action_agent2 == "rob":
+                # TODO: result?
+                pass
+            elif action_agent2 == "chat":
+                # TODO: result?
+                pass
+            elif action_agent2 == "nothing":
+                # TODO: result?
+                pass
+            else:
+                # TODO: errorhandling
+                pass
+        elif action_agent1 == "nothing":
+            if action_agent2 == "rob":
+                # TODO: result?
+                pass
+            elif action_agent2 == "chat":
+                # TODO: result?
+                pass
+            elif action_agent2 == "nothing":
+                # TODO: result?
+                pass
+            else:
+                # TODO: errorhandling
+                pass
+        else:
+            #TODO: errorhandling
+            pass
             
             
-        
             
-        
-        

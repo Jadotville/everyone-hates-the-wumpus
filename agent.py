@@ -18,10 +18,22 @@ class Agent(ABC):
     
     
     @abstractmethod
-    # possible actions: shoot, move, dig, rob, chat, message    
+    # possible actions: shoot, move, dig, message    
     # agent moves only if everyone moves
     def action(self, meeting=None, percept=None, message=None):
         pass
+    
+    # if a meeting is called, the agent shares the same field with other agents and can interact with them
+    # possible interactions: chat, rob, nothing
+    @abstractmethod
+    def meeting(self, agent):
+        pass
+    
+    # the agent receives the result of the meeting
+    @abstractmethod
+    def meeting_result(self, other_agent, result):
+        pass
+    
     
     
 class PlayerAgent(Agent):
@@ -31,6 +43,11 @@ class PlayerAgent(Agent):
     def action(self, meeting=None, percept=None, message=None):
         pass
     
+    def meeting(self, agent):
+        pass
+    
+    def meeting_result(self, other_agent, result):
+        pass
     
 
 class AIAgent(Agent):
@@ -64,6 +81,12 @@ class AIAgent(Agent):
     def action(self, meeting=None, percept=None, message=None):
         pass
     
+    def meeting(self, agent):
+        pass
+    
+    def meeting_result(self, other_agent, result):
+        pass
+    
 # agent that moves randomly    
 class RandomAgent(AIAgent):
     
@@ -71,3 +94,10 @@ class RandomAgent(AIAgent):
         safe_moves = self.select_safe_moves()
         next_move = random.choice(safe_moves)
         return next_move
+    
+    def meeting(self, agent):
+        # TODO: implement the meeting method
+        pass
+    
+    def meeting_result(self, other_agent, result):
+        pass

@@ -23,4 +23,4 @@ if __name__ == '__main__':
     }
     
     
-    game = Game(agents, game_properties, grid_properties)
+    game = Game(agents,grid_properties, game_properties)

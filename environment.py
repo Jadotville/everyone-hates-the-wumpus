@@ -9,7 +9,6 @@ class Game():
     def __init__(self, agents, grid_properties, game_properties, prints=False):
         for _ in range(game_properties["num_games"]):
             self.simulate(agents, grid_properties, prints)
-        return 0
 
 
     # simulates the game given the agents, grid properties

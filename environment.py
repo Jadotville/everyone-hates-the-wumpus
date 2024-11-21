@@ -2,12 +2,58 @@ class Game():
     
     pits = []
     wumpi = []
+    gold = []
+    items = []
     
-    
-    def __init__(self):
-        pass
-    
-    
+    # executes the simulations
+    def __init__(self, agents, grid_properties, game_properties, prints=False):
+        for _ in range(game_properties["num_games"]):
+            self.simulate(agents, grid_properties, prints)
+        return 0
+
+
+    # simulates the game given the agents, grid properties
+    def simulate(self, agents, grid_properties, prints):
+        
+        # creates the initial grid on which the agents are placed after every move 
+        initial_grid = self.grid_preperation(agents, grid_properties)
+        
+        # places the agents on the grid
+        grid = self.update_grid(initial_grid, agents)
+        
+        # prints the initial grid
+        if prints:
+            print(" initial Grid with agents:")   
+            for row in grid:
+                print(row)               
+        
+        
+        #runs the game loop
+        # TODO: add break criteria
+        for _ in range(10):
+        
+            # every agent makes a move
+            for agent in agents:
+                action=agent.action()
+                if action== "up":
+                    agent.position[0]-=1
+                elif action== "down":
+                    agent.position[0]+=1
+                elif action== "left":
+                    agent.position[1]-=1
+                elif action== "right":
+                    agent.position[1]+=1
+            
+            # updates the agent positions on the grid
+            grid = self.update_grid(initial_grid, agents)
+                    
+            # prints the initial grid
+            if prints:
+                print("Grid:")   
+                for row in grid:
+                    print(row)   
+   
+   
     # creates a grid given the grid properties
     # places the agents in the grid by giving them their positions
     def grid_preperation(self, agents, grid_properties):
@@ -38,50 +84,18 @@ class Game():
             agents[3].grid_size = size
         
         self.wumpi = []
-        self.pits = []
-        
-        # TODO: place pits
         # TODO: place wumpi
+        
+        self.pits = []        
+        # TODO: place pits
+        
+        self.gold = []
         # TODO: place gold
+        
+        self.items = []
         # TODO: place special items
         
-        return grid
-    
-
-    # simulates the game given the agents and grid properties
-    def simulate(self, agents, grid_properties):
-        initial_grid = self.grid_preperation(agents, grid_properties)
-            
-        grid = self.update_grid(initial_grid, agents)
-
-        # prints the initial grid with agents (TODO: remove this)
-        print(" initial Grid with agents:")
-        for row in grid:
-            print(row)
-
-        
-        # TODO: run the game loop
-        
-        for _ in range(10):
-        
-            for agent in agents:
-                action=agent.action()
-                if action== "up":
-                    agent.position[0]-=1
-                elif action== "down":
-                    agent.position[0]+=1
-                elif action== "left":
-                    agent.position[1]-=1
-                elif action== "right":
-                    agent.position[1]+=1
-            
-            grid = self.update_grid(initial_grid, agents)
-                    
-            # prints the grid (TODO: remove this)
-            print("Grid:")
-            for row in grid:
-                print(row)
-            
+        return grid     
         
 
     def update_grid(self, grid, agents):

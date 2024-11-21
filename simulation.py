@@ -3,7 +3,6 @@ from agent import RandomAgent
 
 
 if __name__ == '__main__':
-    game = Game()
     
     agents = []
     
@@ -16,9 +15,12 @@ if __name__ == '__main__':
     grid_properties = {
         "size": 5,
         "num_pits": 0,
-        "num_wumpi": 0
+        "num_wumpi": 0,
+    }
+    
+    game_properties = {
+        "num_games": 1,
     }
     
     
-    
-    game.simulate(agents, grid_properties)
+    game = Game(agents, game_properties, grid_properties)

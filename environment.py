@@ -24,9 +24,10 @@ class Game():
         
         # prints the initial grid
         if prints:
-            print(" initial Grid with agents:")   
-            for row in grid:
-                print(row)               
+            # print(" initial Grid with agents:")   
+            # for row in grid:
+            #     print(row)     
+            self.print_objects(grid, "agents")
         
         
         #runs the game loop
@@ -102,7 +103,7 @@ class Game():
             agents[3].grid_size = size
             grid[size - 1][size - 1]["agents"].append(agents[3])
         
-        self.generate_objects(grid, grid_properties)
+        self.spawn_objects(grid, grid_properties)
         
         return grid     
         
@@ -210,3 +211,29 @@ class Game():
         self.items = []
         # TODO: place special items
         pass
+
+    def print_objects(self, grid, item):
+        """
+        Prints out the given grid, filtered by specified item.
+        
+        :param str item: objects to be displayed (options: "agents" | "pit" | "wumpus" | "gold" | "item")
+        """
+        print("Grid filtered by " + item + ": ")   
+        filtered_grid = []
+        
+        for row in grid:
+            extracted_row = []
+            for field in row:
+                # simplifies prints to only show agent IDs
+                if item == "agents":
+                    agents = field.get(item)
+                    for agent in agents:
+                        extracted_row.append(agent.ID)
+                
+                # standard full display of the item
+                else:
+                    extracted_row.append(field.get(item))
+            filtered_grid.append(extracted_row)
+            
+        for row in filtered_grid:
+            print(f"{row}, ")

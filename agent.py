@@ -23,7 +23,7 @@ class Agent(ABC):
     # perceptions of the agent (determined by the environment)
     perceptions = []
 
-    # opinions of ther agents (determined by the agent)
+    # opinions of other agents (determined by the agent)
     opinions = {}
     
 

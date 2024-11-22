@@ -29,38 +29,37 @@ class Agent(ABC):
 
     
     
-    # message that the agent sends to other agents
     @abstractmethod
     def send_message(self):
+        """message that the agent sends to other agents"""
         pass
 
-    
-    # if there are messages from other agents, the agent receives them
     @abstractmethod
     def receive_message(self, agent, message):
+        """if there are messages from other agents, the agent receives them"""
         pass
     
-    
-    # possible actions: shoot, dig, message 
     @abstractmethod
     def action(self):
+        """possible actions: shoot, dig, message """
         pass
     
-    # possible moves: up, down, left, right
     @abstractmethod
     def move(self):
+        """possible moves: up, down, left, right"""
         pass
     
-    # if a meeting is called, the agent shares the same field with other agents and can interact with them
-    # possible interactions: chat, rob, nothing
     @abstractmethod
     def meeting(self, agent):
+        """
+        if a meeting is called, the agent shares the same field with other agents and can interact with them
+        - possible interactions: chat, rob, nothing
+        """
         pass
     
-    
-    # the agent receives the result of the meeting
     @abstractmethod
     def meeting_result(self, other_agent, result):
+        """the agent receives the result of the meeting"""
         pass
     
     
@@ -134,8 +133,8 @@ class AIAgent(Agent):
     def meeting_result(self, other_agent, result):
         pass
     
-# agent that moves randomly    
 class RandomAgent(AIAgent):
+    """agent that moves randomly  """
     
     def send_message(self):
         pass

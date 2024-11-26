@@ -103,7 +103,8 @@ class Game():
         
 
     def update_grid(self, grid, agents):
-        grid_copy = [row[:] for row in grid]        
+        grid_copy = [row[:] for row in grid]
+        meetings = []        
         for agent in agents:
             if agent.ID == 'dead':
                 continue
@@ -127,7 +128,10 @@ class Game():
                     if other_agent.ID == agent.ID:
                         continue
                     if other_agent.position == agent.position:
-                        self.meeting(agent, other_agent)
+                        meeting = [agent.ID, other_agent.ID].sort()
+                        if meeting not in meetings:
+                            meetings.append(meeting)
+                            self.meeting(agent, other_agent)
                     
                 if grid_copy[agent.position[0]][agent.position[1]] == 0:
                     grid_copy[agent.position[0]][agent.position[1]] = agent.ID             

@@ -2,12 +2,24 @@ class Game():
     
     pits = []
     wumpi = []
-    gold = []
+    gold_position = []
     items = []
+    gold_amount_player = {}
     
     # executes the simulations
-    def __init__(self, agents, grid_properties, game_properties):
-        prints = game_properties["prints"]
+    def __init__(self, agents, grid_properties, game_properties, prints=True):
+        if agents:
+            agents[0].ID = 'p1'
+        if len(agents) > 1:
+            agents[1].ID = 'p2'
+        if len(agents) > 2:
+            agents[2].ID = 'p3'
+        if len(agents) > 3:
+            agents[3].ID = 'p4'
+        # beginning: set every player.gold = 0
+        for agent in agents:
+            self.gold_amount_player[agent.ID] = 0
+        print("gold_amount_player", self.gold_amount_player)
         for _ in range(game_properties["num_games"]):
             self.simulate(agents, grid_properties, prints)
 
@@ -31,21 +43,17 @@ class Game():
         #runs the game loop
         # TODO: add break criteria
         for _ in range(10):
-            
-            # TODO: messages
-            
-            # TODO: actions
-            
+        
             # every agent makes a move
             for agent in agents:
-                move = agent.move()
-                if move == "up":
+                action=agent.action()
+                if action== "up":
                     agent.position[0]-=1
-                elif move == "down":
+                elif action== "down":
                     agent.position[0]+=1
-                elif move == "left":
+                elif action== "left":
                     agent.position[1]-=1
-                elif move == "right":
+                elif action== "right":
                     agent.position[1]+=1
             
             # updates the agent positions on the grid
@@ -55,7 +63,8 @@ class Game():
             if prints:
                 print("Grid:")   
                 for row in grid:
-                    print(row)   
+                    print(row)
+                print("Gold:", self.gold_amount_player)
    
    
     # creates a grid given the grid properties
@@ -71,19 +80,15 @@ class Game():
         # gives agents the grid size
         # gives agents their ID
         if agents:
-            agents[0].ID = 'p1'
             agents[0].position = [0, 0]
             agents[0].grid_size = size
         if len(agents) > 1:
-            agents[1].ID = 'p2'
             agents[1].position = [0, size - 1]
             agents[1].grid_size = size
         if len(agents) > 2:
-            agents[2].ID = 'p3'
             agents[2].position = [size - 1, 0]
             agents[2].grid_size = size
         if len(agents) > 3:
-            agents[3].ID = 'p4'
             agents[3].position = [size - 1, size - 1]
             agents[3].grid_size = size
         
@@ -93,8 +98,7 @@ class Game():
         self.pits = []        
         # TODO: place pits
         
-        self.gold = []
-        # TODO: place gold
+        self.gold_position = []
         
         self.items = []
         # TODO: place special items
@@ -104,40 +108,44 @@ class Game():
 
     def update_grid(self, grid, agents):
         grid_copy = [row[:] for row in grid]
-        meetings = []        
+        i = 0
         for agent in agents:
-            if agent.ID == 'dead':
+            if agent.state == 'dead':
                 continue
             if agent.position[0] < 0 or agent.position[0] >= len(grid):
-                agent.ID = 'dead'
+                agent.state = 'dead'
             elif agent.position[1] < 0 or agent.position[1] >= len(grid):
-                agent.ID = 'dead'
+                agent.state = 'dead'
             else:
                 
                 for wumpus in self.wumpi:
                     if wumpus.position == agent.position:
-                        agent.ID = 'dead'
+                        agent.state = 'dead'
                         break
                     
                 for pit in self.pits:
                     if pit.position == agent.position:
-                        agent.ID = 'dead'
+                        agent.state = 'dead'
                         break
-                
+                for gold in self.gold_position:
+                    if gold == agent.position:
+                        self.gold_amount_player[agent.ID] += 5
+                        self.gold_position.remove(gold)
+                        break
+
+
+
                 for other_agent in agents:
                     if other_agent.ID == agent.ID:
                         continue
                     if other_agent.position == agent.position:
-                        meeting = [agent.ID, other_agent.ID].sort()
-                        if meeting not in meetings:
-                            meetings.append(meeting)
-                            self.meeting(agent, other_agent)
+                        self.meeting(agent, other_agent)
                     
                 if grid_copy[agent.position[0]][agent.position[1]] == 0:
                     grid_copy[agent.position[0]][agent.position[1]] = agent.ID             
                 else:
                     grid_copy[agent.position[0]][agent.position[1]] = grid_copy[agent.position[0]][agent.position[1]] + ' | ' + agent.ID
-                
+            i+=1
         return grid_copy
     
     

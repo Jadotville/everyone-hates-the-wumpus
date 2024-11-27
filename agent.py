@@ -4,51 +4,25 @@ import random
 
 
 class Agent(ABC):
-    # 0 -> not in a game, ID -> in a game, dead -> dead (determined by the environment)
-    ID = 0
-    
     
     # current position on the grid (determined by the environment)
     position = [0, 0]
-    
-    # needs the agent to stay on the grid (determined by the environment)
+    # needs the agent to stay on the grid
     grid_size = 0
-    
-    # amount of gold the agent has (determined by the environment)
-    gold = 0
-    
-    # amount of arrows the agent has (determined by the environment)
-    arrows = 0
-    
-    # perceptions of the agent (determined by the environment)
-    perceptions = []
+    # unique for every player!
+    ID = 'unknown'
+    # currently only dead or alive
+    state = "alive"
 
-    # opinions of ther agents (determined by the agent)
+    gold = 0
+    arrows = 0
     opinions = {}
     
-
     
-    
-    # message that the agent sends to other agents
     @abstractmethod
-    def send_message(self):
-        pass
-
-    
-    # if there are messages from other agents, the agent receives them
-    @abstractmethod
-    def receive_message(self, agent, message):
-        pass
-    
-    
-    # possible actions: shoot, dig, message 
-    @abstractmethod
-    def action(self):
-        pass
-    
-    # possible moves: up, down, left, right
-    @abstractmethod
-    def move(self):
+    # possible actions: shoot, move, dig, message    
+    # agent moves only if everyone moves
+    def action(self, percept=None, message=None):
         pass
     
     # if a meeting is called, the agent shares the same field with other agents and can interact with them
@@ -56,7 +30,6 @@ class Agent(ABC):
     @abstractmethod
     def meeting(self, agent):
         pass
-    
     
     # the agent receives the result of the meeting
     @abstractmethod
@@ -69,16 +42,7 @@ class PlayerAgent(Agent):
     
     # TODO: create a playable agent
     
-    def send_message(self):
-        pass
-
-    def receive_message(self, agent, message):
-        pass
- 
-    def action(self):
-        pass
-    
-    def move(self):
+    def action(self, meeting=None, percept=None, message=None):
         pass
     
     def meeting(self, agent):
@@ -116,16 +80,7 @@ class AIAgent(Agent):
         
         return safe_moves
     
-    def send_message(self):
-        pass
-
-    def receive_message(self, agent, message):
-        pass
- 
-    def action(self):
-        pass
-        
-    def move(self):
+    def action(self, meeting=None, percept=None, message=None):
         pass
     
     def meeting(self, agent):
@@ -137,21 +92,13 @@ class AIAgent(Agent):
 # agent that moves randomly    
 class RandomAgent(AIAgent):
     
-    def send_message(self):
-        pass
-
-    def receive_message(self, agent, message):
-        pass
- 
-    def action(self):
-        pass
-    
-    def move(self):
+    def action(self, meeting=None, percept=None, message=None):
         safe_moves = self.select_safe_moves()
         next_move = random.choice(safe_moves)
         return next_move
     
     def meeting(self, agent):
+        # TODO: implement the meeting method
         pass
     
     def meeting_result(self, other_agent, result):

@@ -13,6 +13,9 @@ class Agent(ABC):
     ID = 'unknown'
     # currently only dead or alive
     state = "alive"
+    
+    # the agent's perception of the environment
+    perception = None
 
     gold = 0
     arrows = 0
@@ -101,6 +104,7 @@ class AIAgent(Agent):
 class RandomAgent(AIAgent):
     
     def action(self, meeting=None, percept=None, message=None):
+    
         safe_moves = self.select_safe_moves()
         next_move = random.choice(safe_moves)
         return next_move

@@ -1,5 +1,5 @@
 import copy
-from enums import State # for storing additional information in a grid's field
+from enums import State, Perception # for storing additional information in a grid's field
 
 class Game():
 

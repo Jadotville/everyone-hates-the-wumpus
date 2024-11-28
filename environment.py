@@ -1,7 +1,10 @@
 import copy
+from enums import State # for storing additional information in a grid's field
+
 class Game():
 
     def print_grid(self, grid):
+        """Display the grid with all agents, pits, wumpi, gold and items"""
         grid_print = []
         i = 0
         for row in grid:
@@ -14,17 +17,18 @@ class Game():
                     string_all_agents =string_all_agents.strip()
                     grid_print[i].append(string_all_agents)
                 elif field["state"] is not None:
-                    grid_print[i].append(field["state"][0])
+                    grid_print[i].append(field["state"].value[0])
                 else:
                     grid_print[i].append("0")
             i += 1
         for row in grid_print:
             print(row)
 
-    pits = []
-    wumpi = []
-    gold_position = []
-    items = []
+    # primitive lists for iterating over specific objects faster
+    pits = [] # element-format: (int,int)
+    wumpi = [] # element-format: dict {"position": (int,int), "size": string}
+    gold_position = [] # element-format: dict {"position": (int,int), "amount": int}
+    items = [] # element-format: dict {"position": (int,int), "name": string}
     gold_amount_player = {}
 
     # executes the simulations
@@ -44,8 +48,10 @@ class Game():
             self.simulate(agents, grid_properties, prints)
 
 
-    # simulates the game given the agents, grid properties
     def simulate(self, agents, grid_properties, prints):
+        """
+        simulates the game given the agents, grid properties
+        """
 
         # creates the initial grid on which the agents are placed after every move
         initial_grid = self.grid_preperation(agents, grid_properties)
@@ -88,31 +94,39 @@ class Game():
                 print("Gold:", self.gold_amount_player)
 
 
-    # creates a grid given the grid properties
-    # places the agents in the grid by giving them their positions
     def grid_preperation(self, agents, grid_properties):
+        """
+        - creates a grid given the grid properties
+        - places the agents in the grid by giving them their positions
+        """
 
         # creates a grid of size n x n
         size = grid_properties["size"]
 
-        grid = [[{"agents": [], "state": None} for _ in range(size)] for _ in range(size)]
+        grid = [[{"agents": [], "state": State.NONE} for _ in range(size)] for _ in range(size)]
+        # "state"-values: "pit" | 
+        
 
         # initializes the agents
-        # gives agents their positions
-        # gives agents the grid size
-        # gives agents their ID
+        # gives agents their positions, grid size and ID
+        # stores agents in the grid
         if agents:
             agents[0].position = [0, 0]
             agents[0].grid_size = size
+            grid[0][0]["agents"].append(agents[0])
         if len(agents) > 1:
             agents[1].position = [0, size - 1]
             agents[1].grid_size = size
+            grid[0][size - 1]["agents"].append(agents[1])
         if len(agents) > 2:
             agents[2].position = [size - 1, 0]
             agents[2].grid_size = size
+            grid[size - 1][0]["agents"].append(agents[2])
         if len(agents) > 3:
             agents[3].position = [size - 1, size - 1]
             agents[3].grid_size = size
+            grid[size - 1][ size - 1]["agents"].append(agents[3])
+            
         self.wumpi = []
         # TODO: place wumpi
 
@@ -128,7 +142,9 @@ class Game():
 
 
     def update_grid(self, grid, agents):
-        # copy the grid so no pointer are left: "grid_copy"
+        """
+        - copy the grid so no pointers are left: "grid_copy"
+        """
         grid_copy = copy.deepcopy(grid)
         i = 0
         for agent in agents:
@@ -163,7 +179,7 @@ class Game():
                     if other_agent.position == agent.position:
                         self.meeting(agent, other_agent)
 
-                if grid_copy[agent.position[0]][agent.position[1]]["state"] == None:
+                if grid_copy[agent.position[0]][agent.position[1]]["state"] == State.NONE:
                     grid_copy[agent.position[0]][agent.position[1]]["agents"].append(agent.ID)
                     # serach in the old grid 'grid' for the agent and remove this position in the copied grid: "copy_grid"
                     for row in grid:
@@ -175,8 +191,10 @@ class Game():
         return grid_copy
 
 
-    # defines the result of a meeting between two agents
     def meeting(self, agent1, agent2):
+        """
+        - defines the result of a meeting between two agents
+        """
         action_agent1 = agent1.meeting(agent2)
         action_agent2 = agent2.meeting(agent1)
         if action_agent1 == "rob":

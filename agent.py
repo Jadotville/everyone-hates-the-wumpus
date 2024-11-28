@@ -20,20 +20,28 @@ class Agent(ABC):
     
     
     @abstractmethod
-    # possible actions: shoot, move, dig, message    
-    # agent moves only if everyone moves
     def action(self, percept=None, message=None):
+        """
+        - possible actions: shoot, move, dig, message
+        - agent moves only if everyone moves
+        """
         pass
     
-    # if a meeting is called, the agent shares the same field with other agents and can interact with them
-    # possible interactions: chat, rob, nothing
+    
     @abstractmethod
     def meeting(self, agent):
+        """
+        - if a meeting is called, the agent shares the same field with other agents and can interact with them
+        - possible interactions: chat, rob, nothing
+        """
         pass
     
-    # the agent receives the result of the meeting
+    
     @abstractmethod
     def meeting_result(self, other_agent, result):
+        """
+        - the agent receives the result of the meeting
+        """
         pass
     
     

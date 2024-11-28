@@ -13,9 +13,11 @@ if __name__ == '__main__':
     
     
     grid_properties = {
-        "size": 5,
-        "num_pits": 0,
-        "num_wumpi": 0,
+        "size": 8,
+        "num_pits": 6,
+        "num_wumpi": 3,
+        "num_gold": 3,
+        "num_armor": 2
     }
     
     game_properties = {

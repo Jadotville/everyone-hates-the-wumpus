@@ -1,6 +1,7 @@
 import copy
 class Game():
 
+    # prints the grid
     def print_grid(self, grid):
         grid_print = []
         i = 0
@@ -10,7 +11,7 @@ class Game():
                 if field["agents"]:
                     string_all_agents = ""
                     for agent in field["agents"]:
-                        string_all_agents += agent + " " if len(agent) > 1 else agent
+                        string_all_agents += agent.ID + " " if len(agent.ID) > 1 else agent.ID
                     string_all_agents =string_all_agents.strip()
                     grid_print[i].append(string_all_agents)
                 elif field["state"] is not None:
@@ -21,25 +22,35 @@ class Game():
         for row in grid_print:
             print(row)
 
-    pits = []
-    wumpi = []
-    gold_position = []
-    items = []
-    gold_amount_player = {}
 
+    # prints the positions of the agents
+    def print_positions(self, agents):
+        positions = ""
+        for agent in agents:
+            positions += agent.ID + ": " + str(agent.position) + " "
+        print(positions)
+        
+        
+    # prints the gold of the agents
+    def print_gold(self, agents):
+        gold = ""
+        for agent in agents:
+            gold += agent.ID + ": " + str(agent.gold) + " "
+        print(gold)
+    
+    
     # executes the simulations
     def __init__(self, agents, grid_properties, game_properties, prints=True):
-        if agents:
-            agents[0].ID = 'p1'
-        if len(agents) > 1:
-            agents[1].ID = 'p2'
-        if len(agents) > 2:
-            agents[2].ID = 'p3'
-        if len(agents) > 3:
-            agents[3].ID = 'p4'
-        # beginning: set every player.gold = 0
-        for agent in agents:
-            self.gold_amount_player[agent.ID] = 0
+        # assigns the agents their IDs and setting their gold to 0
+        if not agents:
+            # TODO: errorhandling
+            pass
+        else:
+            for i in range(len(agents)):
+                agents[i].ID = "p" + str(i + 1)
+                agents[i].gold = 0
+        
+        # executes the simulations
         for _ in range(game_properties["num_games"]):
             self.simulate(agents, grid_properties, prints)
 
@@ -48,26 +59,29 @@ class Game():
     def simulate(self, agents, grid_properties, prints):
 
         # creates the initial grid on which the agents are placed after every move
-        initial_grid = self.grid_preperation(agents, grid_properties)
+        grid = self.grid_preperation(agents, grid_properties)
+        
+        # prints the initial grid without agents
         if prints:
             print(" initial Grid without agents:")
-            self.print_grid(initial_grid)
+            self.print_grid(grid)
+            
         # places the agents on the grid
-        grid = self.update_grid(initial_grid, agents)
+        self.update_grid(grid, agents)
 
-
-        # prints the initial grid
+        # prints the initial grid with agents
         if prints:
             print(" initial Grid with agents:")
             self.print_grid(grid)
 
-
         #runs the game loop
         # TODO: add break criteria
-        for _ in range(10):
-
+        for _ in range(10):              
+            
+            
             # every agent makes a move
             for agent in agents:
+                grid[agent.position[0]][agent.position[1]]["agents"] = []
                 action=agent.action()
                 if action== "up":
                     agent.position[0]-=1
@@ -77,15 +91,19 @@ class Game():
                     agent.position[1]-=1
                 elif action== "right":
                     agent.position[1]+=1
+                agent.perceptions = copy.deepcopy(grid[agent.position[0]][agent.position[1]]["perceptions"])
 
             # updates the agent positions on the grid
-            grid = self.update_grid(initial_grid, agents)
+            self.update_grid(grid, agents)
 
-            # prints the initial grid
+            # prints the grid
             if prints:
                 print("Grid:")
                 self.print_grid(grid)
-                print("Gold:", self.gold_amount_player)
+                print("Gold:")
+                self.print_gold(agents)
+                print("Positions:")
+                self.print_positions(agents)
 
 
     # creates a grid given the grid properties
@@ -95,12 +113,15 @@ class Game():
         # creates a grid of size n x n
         size = grid_properties["size"]
 
-        grid = [[{"agents": [], "state": None} for _ in range(size)] for _ in range(size)]
+        # initializes the grid with empty fields
+        grid = [[{"agents": [], 
+                  "state": None, # None, "pit", "wumpus", "gold", "item"
+                  "perceptions": [] # "breeze", "stench"
+                  } for _ in range(size)] for _ in range(size)]
 
         # initializes the agents
         # gives agents their positions
         # gives agents the grid size
-        # gives agents their ID
         if agents:
             agents[0].position = [0, 0]
             agents[0].grid_size = size
@@ -113,25 +134,30 @@ class Game():
         if len(agents) > 3:
             agents[3].position = [size - 1, size - 1]
             agents[3].grid_size = size
-        self.wumpi = []
+            
         # TODO: place wumpi
-
-        self.pits = []
+        # example for placing wumpi
+        grid[3][4]["state"] = "wumpus"
+        
         # TODO: place pits
+        # example for placing pits
+        grid[3][2]["state"] = "pit"
 
-        self.gold_position = []
+        # TODO: place gold
+        # example for placing gold
+        grid[2][3]["state"] = "gold"
 
-        self.items = []
         # TODO: place special items
+        # example for placing special items
+        grid[4][2]["state"] = "arrow"
 
         return grid
 
 
     def update_grid(self, grid, agents):
-        # copy the grid so no pointer are left: "grid_copy"
-        grid_copy = copy.deepcopy(grid)
-        i = 0
+
         for agent in agents:
+            
             if agent.state == 'dead':
                 continue
             if agent.position[0] < 0 or agent.position[0] >= len(grid):
@@ -139,44 +165,28 @@ class Game():
             elif agent.position[1] < 0 or agent.position[1] >= len(grid):
                 agent.state = 'dead'
             else:
+                if grid[agent.position[0]][agent.position[1]]["state"] == "pit":
+                    agent.state = 'dead'
+                    
+                elif grid[agent.position[0]][agent.position[1]]["state"] == "wumpus":
+                    agent.state = 'dead'
+                
+                elif grid[agent.position[0]][agent.position[1]]["state"] == "gold":
+                    print(agent.gold)
+                    agent.gold += 5
+                    print(agent.gold)
+                    print("Gold gefunden")
+                    grid[agent.position[0]][agent.position[1]]["state"] = None
 
-                for wumpus in self.wumpi:
-                    if wumpus.position == agent.position:
-                        agent.state = 'dead'
-                        break
-
-                for pit in self.pits:
-                    if pit.position == agent.position:
-                        agent.state = 'dead'
-                        break
-                for gold in self.gold_position:
-                    if gold == agent.position:
-                        self.gold_amount_player[agent.ID] += 5
-                        self.gold_position.remove(gold)
-                        break
-
-
-
-                for other_agent in agents:
-                    if other_agent.ID == agent.ID:
-                        continue
-                    if other_agent.position == agent.position:
-                        self.meeting(agent, other_agent)
-
-                if grid_copy[agent.position[0]][agent.position[1]]["state"] == None:
-                    grid_copy[agent.position[0]][agent.position[1]]["agents"].append(agent.ID)
-                    # serach in the old grid 'grid' for the agent and remove this position in the copied grid: "copy_grid"
-                    for row in grid:
-                        for field in row:
-                            if agent.ID in field["agents"]:
-                                field["agents"].remove(agent.ID)
-                                break
-            i+=1
-        return grid_copy
+                
+                for other_agent in grid[agent.position[0]][agent.position[1]]["agents"]:
+                    self.meeting(agent, other_agent)
+                grid[agent.position[0]][agent.position[1]]["agents"].append(agent)
 
 
     # defines the result of a meeting between two agents
     def meeting(self, agent1, agent2):
+        print("meeting: " + agent1.ID + " und " +agent2.ID)
         action_agent1 = agent1.meeting(agent2)
         action_agent2 = agent2.meeting(agent1)
         if action_agent1 == "rob":

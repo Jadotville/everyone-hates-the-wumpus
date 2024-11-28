@@ -121,8 +121,8 @@ class Game():
 
         # initializes the grid with empty fields
         grid = [[{"agents": [], 
-                  "state": State.NONE, # None | pit | wumpus | gold | armor
-                  "perceptions": [] # "breeze", "stench"
+                  "state": None, # plz use State.x: none | pit | wumpus | gold | armor
+                  "perceptions": [] # plz use Perception.x: breeze | stench
                   } for _ in range(size)] for _ in range(size)]
         
 
@@ -192,7 +192,7 @@ class Game():
                     agent.gold += 5
                     print(agent.gold)
                     print("Gold gefunden")
-                    grid[agent.position[0]][agent.position[1]]["state"] = State.NONE
+                    grid[agent.position[0]][agent.position[1]]["state"] = None
 
                 
                 for other_agent in grid[agent.position[0]][agent.position[1]]["agents"]:

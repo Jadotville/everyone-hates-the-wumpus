@@ -81,7 +81,7 @@ class Game():
 
         #runs the game loop
         # TODO: add break criteria
-        for _ in range(1):              
+        for _ in range(10):              
             
             
             # every agent makes a move

@@ -14,7 +14,7 @@ if __name__ == '__main__':
     
     grid_properties = {
         "size": 8,
-        "num_pits": 6,
+        "num_pits": 15, # this should be lower than size*size/3
         "num_wumpi": 3,
         "num_gold": 3,
         "num_armor": 2

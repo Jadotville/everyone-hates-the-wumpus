@@ -1,6 +1,6 @@
 import copy
 from enums import State, Perception # for storing additional information in a grid's field
-from random import randint # for randomized world generation
+from random import randint, shuffle # for randomized world generation
 from utils import near_objects
 
 class Game():
@@ -81,7 +81,7 @@ class Game():
 
         #runs the game loop
         # TODO: add break criteria
-        for _ in range(10):              
+        for _ in range(1):              
             
             
             # every agent makes a move
@@ -147,25 +147,10 @@ class Game():
             agents[3].grid_size = size
             grid[size - 1][ size - 1]["agents"].append(agents[3])
             
-            
-        # TODO: place wumpi
-        # example for placing wumpi
-        grid[3][4]["state"] = State.WUMPUS
-        
-        # TODO: place pits
-        # example for placing pits
-        grid[3][2]["state"] = State.PIT
 
-        # TODO: place gold
-        # example for placing gold
-        grid[2][3]["state"] = State.GOLD
-
-        # TODO: place special items
-        # example for placing special items
-        grid[4][2]["state"] = State.ARMOR
-
-        # place all objects
-        self.generate_world(grid, grid_properties)
+        # Order matters: place pits, then objects
+        grid = self.spawn_pits(agents, grid, grid_properties)
+        grid = self.spawn_objects(grid, grid_properties)
 
         return grid
 
@@ -238,6 +223,139 @@ class Game():
                         excluded_fields += 1 # ignore this field next
         
         return grid
+    
+    
+    def spawn_pits(self, agents, grid, grid_properties):
+        """
+        New implementation for spawning State.PITs specifically. Randomly fills fields skipping agents' positions.
+        - keep the amount of pits lower than a third of the field
+        """
+        # Extract properties for easier access
+        size = grid_properties["size"]
+        num_pits = grid_properties["num_pits"]
+        agent_positions = []
+        for agent in agents:
+            agent_positions.append((agent.position[0], agent.position[1]))
+        
+        # Create a flat list of grid positions, exclude agent positions
+        all_positions = [(row, col) for row in range(size) for col in range(size)]
+        for pos in agent_positions:
+            all_positions.remove(pos)
+        
+        attempts = 0
+        all_accessible = False # grid hasn't been checked for full acessibility
+        while not all_accessible:
+            attempts += 1
+            # Shuffle positions and select a subset for object placement
+            shuffle(all_positions)
+            selected_positions = all_positions[:num_pits]
+
+            grid_copy = copy.deepcopy(grid)
+            
+            # Create a list of objects to place
+            objects = ([State.PIT] * num_pits)
+
+            # Place objects in the selected grid positions
+            for pos, obj in zip(selected_positions, objects):
+                row, col = pos
+                grid_copy[row][col]["state"] = obj
+            
+            # Validate pit placement, otherwise reset grid's copy for reshuffling
+            # print(f"Grid-Generation: flood-fill found {self.flood_fill(grid_copy, 0, 0)} fields") # for debugging purposes
+            accessible_fields = self.flood_fill(grid_copy, 0, 0)
+            target_number = size * size - num_pits
+            if accessible_fields >= target_number:
+                all_accessible = True
+                grid = grid_copy
+            else:
+                print(f"Attempt {attempts}: Grid not fully accessible, only {accessible_fields} out of {target_number}. Reshuffling.") # for debugging only
+        
+        return grid
+    
+    def spawn_objects(self, grid, grid_properties):
+        """New Implementation: Places wumpi, gold, armor and optionally more in the grid."""
+        # Extract properties for easier access
+        size = grid_properties["size"]
+        num_wumpi = grid_properties["num_wumpi"]
+        num_gold = grid_properties["num_gold"]
+        num_armor = grid_properties["num_armor"]
+
+        # Total number of objects to place
+        total_objects =  num_wumpi + num_gold + num_armor
+
+        # Create a flat list of grid positions, remove fields with agents and pits
+        all_positions = [(row, col) for row in range(size) for col in range(size)]
+        for row, col in all_positions:
+            if grid[row][col]["state"] != None:
+                all_positions.remove((row,col))
+        
+        # Shuffle positions and select a subset for object placement
+        shuffle(all_positions)
+        selected_positions = all_positions[:total_objects]
+
+        # Create a list of objects to place
+        objects = ([State.WUMPUS] * num_wumpi + 
+                [State.GOLD] * num_gold + 
+                [State.ARMOR] * num_armor)
+        
+        # Shuffle the objects
+        shuffle(objects)
+
+        # Place objects in the selected grid positions
+        for pos, obj in zip(selected_positions, objects):
+            row, col = pos
+            grid[row][col]["state"] = obj
+        
+        return grid
+    
+    def flood_fill(self, grid, start_row, start_col):
+        """
+        Calculate the number of accessible fields in the world's grid from a starting position.
+        
+        :param 2D-list grid: The world's grid, there have to be State.PITs
+        :param int start_row: Starting row index
+        :param int start_col: Starting column index
+        
+        """
+        rows = len(grid)
+        cols = len(grid[0])
+        
+        # Check if the starting position is valid
+        if grid[start_row][start_col]["state"] == State.PIT:
+            return 0 
+        
+        # Directions for moving in 4 cardinal directions (up, down, left, right)
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        
+        # Stack for iterative flood-fill
+        stack = [(start_row, start_col)]
+        visited = set()  # To track visited cells
+        accessible_count = 0
+        
+        while stack:
+            row, col = stack.pop()
+            
+            # Skip if already visited or pit
+            if (row, col) in visited:
+                continue
+            
+            # Mark the field as visited
+            visited.add((row, col))
+            accessible_count += 1
+            
+            # Explore neighbors
+            for dr, dc in directions:
+                new_row, new_col = row + dr, col + dc
+                
+                # Check if the neighbor is within bounds and accessible
+                if (0 <= new_row < rows and 
+                    0 <= new_col < cols and 
+                    grid[new_row][new_col]["state"] != State.PIT and 
+                    (new_row, new_col) not in visited):
+                    stack.append((new_row, new_col))
+        
+        return accessible_count
+    
     
     def update_grid(self, grid, agents):
         """

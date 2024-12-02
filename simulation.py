@@ -4,13 +4,7 @@ from agent import RandomAgent
 
 if __name__ == '__main__':
     
-    agents = []
-    
-    agents.append(RandomAgent())
-    agents.append(RandomAgent())
-    agents.append(RandomAgent())
-    agents.append(RandomAgent())
-    
+    agents = [RandomAgent(), RandomAgent(), RandomAgent(), RandomAgent()]       
     
     grid_properties = {
         "size": 8,

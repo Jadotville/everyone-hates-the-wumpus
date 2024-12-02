@@ -23,10 +23,26 @@ class Agent(ABC):
     
     
     @abstractmethod
-    def action(self, percept=None, message=None):
+    def action(self):
         """
-        - possible actions: shoot, move, dig, message
+        - possible actions: shoot, dig
         - agent moves only if everyone moves
+        """
+        pass
+    
+    @abstractmethod
+    def move(self):
+        """
+        - the agent moves in a direction
+        - possible results: up, down, left, right
+        """
+        pass
+    
+    @abstractmethod
+    def conversation(self):
+        """
+        - the agent interacts with other agents
+        - possible interactions: 
         """
         pass
     
@@ -53,7 +69,13 @@ class PlayerAgent(Agent):
     
     # TODO: create a playable agent
     
-    def action(self, meeting=None, percept=None, message=None):
+    def move(self):
+        pass
+    
+    def conversation(self):
+        pass
+    
+    def action(self):
         pass
     
     def meeting(self, agent):
@@ -91,7 +113,13 @@ class AIAgent(Agent):
         
         return safe_moves
     
-    def action(self, meeting=None, percept=None, message=None):
+    def action(self):
+        pass
+    
+    def move(self):
+        pass
+    
+    def conversation(self):
         pass
     
     def meeting(self, agent):
@@ -103,11 +131,16 @@ class AIAgent(Agent):
 # agent that moves randomly    
 class RandomAgent(AIAgent):
     
-    def action(self, meeting=None, percept=None, message=None):
-    
+    def move(self):
         safe_moves = self.select_safe_moves()
         next_move = random.choice(safe_moves)
         return next_move
+    
+    def action(self):
+        pass
+    
+    def conversation(self):
+        pass
     
     def meeting(self, agent):
         # TODO: implement the meeting method

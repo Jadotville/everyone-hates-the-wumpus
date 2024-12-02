@@ -83,18 +83,19 @@ class Game():
         # TODO: add break criteria
         for _ in range(10):              
             
+            self.interaction(agents)
             
             # every agent makes a move
             for agent in agents:
                 grid[agent.position[0]][agent.position[1]]["agents"] = []
-                action=agent.action()
-                if action== "up":
+                move=agent.move()
+                if move== "up":
                     agent.position[0]-=1
-                elif action== "down":
+                elif move== "down":
                     agent.position[0]+=1
-                elif action== "left":
+                elif move== "left":
                     agent.position[1]-=1
-                elif action== "right":
+                elif move== "right":
                     agent.position[1]+=1
                 agent.perceptions = copy.deepcopy(grid[agent.position[0]][agent.position[1]]["perceptions"])
 
@@ -361,8 +362,6 @@ class Game():
         """
         - copy the grid so no pointers are left: "grid_copy"
         """
-        grid_copy = copy.deepcopy(grid)
-        i = 0
         for agent in agents:
             
             if agent.state == 'dead':
@@ -379,12 +378,9 @@ class Game():
                     agent.state = 'dead'
                 
                 elif grid[agent.position[0]][agent.position[1]]["state"] == State.GOLD:
-                    print(agent.gold)
                     agent.gold += 5
-                    print(agent.gold)
                     print("Gold gefunden")
                     grid[agent.position[0]][agent.position[1]]["state"] = None
-
                 
                 for other_agent in grid[agent.position[0]][agent.position[1]]["agents"]:
                     self.meeting(agent, other_agent)
@@ -441,5 +437,6 @@ class Game():
             #TODO: errorhandling
             pass
             
-            
+    def interaction(self, agents):
+        pass
             

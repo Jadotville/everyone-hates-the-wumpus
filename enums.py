@@ -17,3 +17,12 @@ class Perception(Enum):
     """
     BREEZE = "breeze"
     STENCH = "stench"
+    
+class Gold_found(Enum):
+    """
+    This provides a fixed selection of possible reactions for agents which found gold. Current options:
+    - dig, leava, bidding
+    """
+    dig = "dig"
+    leave = "leave"
+    bidding = "bidding"

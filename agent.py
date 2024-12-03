@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from enums import State, Perception, Gold_found
 
 import random
 
@@ -63,6 +64,19 @@ class Agent(ABC):
         """
         pass
     
+    def found_gold(self):
+        """agents found gold on the field
+
+        Returns:
+            dig: the agent digs for gold
+            leave: the agent leaves the gold
+            bidding: the agent starts a bidding for the gold
+        """
+        pass
+    
+    def bidding(self, agent, gold):
+        pass
+    
     
     
 class PlayerAgent(Agent):
@@ -82,6 +96,12 @@ class PlayerAgent(Agent):
         pass
     
     def meeting_result(self, other_agent, result):
+        pass
+    
+    def found_gold(self):
+        pass
+    
+    def bidding(self, agent, gold):
         pass
     
 
@@ -127,6 +147,12 @@ class AIAgent(Agent):
     
     def meeting_result(self, other_agent, result):
         pass
+
+    def found_gold(self):
+        pass
+    
+    def bidding(self, agent, gold):
+        pass
     
 # agent that moves randomly    
 class RandomAgent(AIAgent):
@@ -147,4 +173,10 @@ class RandomAgent(AIAgent):
         pass
     
     def meeting_result(self, other_agent, result):
+        pass
+    
+    def found_gold(self):
+        return Gold_found.dig
+    
+    def bidding(self, agent, gold):
         pass

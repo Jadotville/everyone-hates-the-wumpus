@@ -1,5 +1,5 @@
 import copy
-from enums import State, Perception # for storing additional information in a grid's field
+from enums import State, Perception, Gold_found # for storing additional information in a grid's field
 from random import randint, shuffle # for randomized world generation
 from utils import near_objects
 
@@ -66,17 +66,9 @@ class Game():
         # creates the initial grid on which the agents are placed after every move
         grid = self.grid_preperation(agents, grid_properties)
         
-        # prints the initial grid without agents
+        # prints the initial grid
         if prints:
-            print(" initial Grid without agents:")
-            self.print_grid(grid)
-            
-        # places the agents on the grid
-        self.update_grid(grid, agents)
-
-        # prints the initial grid with agents
-        if prints:
-            print(" initial Grid with agents:")
+            print(" initial Grid:")
             self.print_grid(grid)
 
         #runs the game loop
@@ -378,9 +370,14 @@ class Game():
                     agent.state = 'dead'
                 
                 elif grid[agent.position[0]][agent.position[1]]["state"] == State.GOLD:
-                    agent.gold += 5
-                    print("Gold gefunden")
-                    grid[agent.position[0]][agent.position[1]]["state"] = None
+                    reaction = agent.found_gold()
+                    if reaction == Gold_found.dig:
+                        # TODO: different gold amounts
+                        agent.gold += 5
+                        grid[agent.position[0]][agent.position[1]]["state"] = None
+                        print("Gold gefunden")
+                    elif reaction == Gold_found.bidding:
+                        self.bidding(agent.ID, agents, grid[agent.position[0]][agent.position[1]]["state"])
                 
                 for other_agent in grid[agent.position[0]][agent.position[1]]["agents"]:
                     self.meeting(agent, other_agent)
@@ -438,5 +435,15 @@ class Game():
             pass
             
     def interaction(self, agents):
-        pass
+        """
+        - defines the result of an interaction between all agents
+        """
+        print("interaction")
+    
+    def bidding(self, agent, agents, gold):
+        """
+        - defines the result of a bidding between all agents
+        """
+        print("bidding")
+        
             

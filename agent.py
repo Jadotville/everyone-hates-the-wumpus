@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from enums import State, Perception, Gold_found
+from enums import State, Perception, Gold_found, Status
 
 import random
 
@@ -13,7 +13,7 @@ class Agent(ABC):
     # unique for every player!
     ID = 'unknown'
     # currently only dead or alive
-    state = "alive"
+    status = Status.alive
     
     # the agent's perception of the environment
     perception = None
@@ -22,7 +22,14 @@ class Agent(ABC):
     arrows = 0
     opinions = {}
     
-    
+    @abstractmethod
+    def move(self):
+        """
+        - the agent moves in a direction
+        - possible results: up, down, left, right
+        """
+        pass   
+     
     @abstractmethod
     def action(self):
         """
@@ -31,13 +38,7 @@ class Agent(ABC):
         """
         pass
     
-    @abstractmethod
-    def move(self):
-        """
-        - the agent moves in a direction
-        - possible results: up, down, left, right
-        """
-        pass
+
     
     @abstractmethod
     def conversation(self):

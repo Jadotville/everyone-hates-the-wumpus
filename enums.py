@@ -26,3 +26,11 @@ class Gold_found(Enum):
     dig = "dig"
     leave = "leave"
     bidding = "bidding"
+    
+class Status(Enum):
+    """
+    This provides a fixed selection of possible status for agents. Current options:
+    - alive, dead
+    """
+    alive = "alive"
+    dead = "dead"

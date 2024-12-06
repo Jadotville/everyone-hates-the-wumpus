@@ -1,5 +1,5 @@
 import copy
-from enums import State, Perception, Gold_found # for storing additional information in a grid's field
+from enums import State, Perception, Gold_found, Status # for storing additional information in a grid's field
 from random import randint, shuffle # for randomized world generation
 from utils import near_objects
 
@@ -37,7 +37,7 @@ class Game():
                 elif field["state"] is not None:
                     grid_print[i].append(field["state"].value[0])
                 else:
-                    grid_print[i].append("0")
+                    grid_print[i].append("_")
             i += 1
         for row in grid_print:
             print(row)
@@ -80,6 +80,8 @@ class Game():
             # every agent makes a move
             for agent in agents:
                 grid[agent.position[0]][agent.position[1]]["agents"] = []
+                if agent.status == Status.dead:
+                    continue
                 move=agent.move()
                 if move== "up":
                     agent.position[0]-=1
@@ -91,8 +93,12 @@ class Game():
                     agent.position[1]+=1
                 agent.perceptions = copy.deepcopy(grid[agent.position[0]][agent.position[1]]["perceptions"])
 
+            
+            
             # updates the agent positions on the grid
             self.update_grid(grid, agents)
+
+            self.interactions(grid, agents)
 
             # prints the grid
             if prints:
@@ -351,37 +357,52 @@ class Game():
     
     
     def update_grid(self, grid, agents):
-        """
-        - copy the grid so no pointers are left: "grid_copy"
-        """
         for agent in agents:
             
-            if agent.state == 'dead':
+            if agent.status == Status.dead:
                 continue
+            
             if agent.position[0] < 0 or agent.position[0] >= len(grid):
-                agent.state = 'dead'
-            elif agent.position[1] < 0 or agent.position[1] >= len(grid):
-                agent.state = 'dead'
-            else:
-                if grid[agent.position[0]][agent.position[1]]["state"] == State.PIT:
-                    agent.state = 'dead'
+                agent.status = Status.dead
+                continue
+            
+            if agent.position[1] < 0 or agent.position[1] >= len(grid):
+                agent.status = Status.dead
+                continue
+            
+            if grid[agent.position[0]][agent.position[1]]["state"] == State.PIT:
+                agent.status = Status.dead
+                continue    
                     
-                elif grid[agent.position[0]][agent.position[1]]["state"] == State.WUMPUS:
-                    agent.state = 'dead'
-                
-                elif grid[agent.position[0]][agent.position[1]]["state"] == State.GOLD:
-                    reaction = agent.found_gold()
-                    if reaction == Gold_found.dig:
-                        # TODO: different gold amounts
-                        agent.gold += 5
-                        grid[agent.position[0]][agent.position[1]]["state"] = None
-                        print("Gold gefunden")
-                    elif reaction == Gold_found.bidding:
-                        self.bidding(agent.ID, agents, grid[agent.position[0]][agent.position[1]]["state"])
-                
-                for other_agent in grid[agent.position[0]][agent.position[1]]["agents"]:
-                    self.meeting(agent, other_agent)
-                grid[agent.position[0]][agent.position[1]]["agents"].append(agent)
+            if grid[agent.position[0]][agent.position[1]]["state"] == State.WUMPUS:
+                agent.status = Status.dead
+                continue
+            
+            grid[agent.position[0]][agent.position[1]]["agents"].append(agent)
+        
+        
+    def interactions(self, grid, agents):
+        reactions = {}
+        
+        for agent in agents:
+            
+            for other_agent in grid[agent.position[0]][agent.position[1]]["agents"]:
+                self.meeting(agent, other_agent)
+            
+            if grid[agent.position[0]][agent.position[1]]["state"] == State.GOLD:
+                reaction = agent.found_gold()
+                reactions[agent] = reaction
+    
+        self.gold_digging(reactions, grid)    
+
+             
+    def gold_digging(self, reactions, grid):
+        # TODO: implement gold digging
+        # for agent, reaction in reactions:
+        #     if reaction == Gold_found.dig:
+        #         grid[agent.position[0]][agent.position[1]]["state"] = None
+        #         agent.gold += 1      
+        pass
 
 
     def meeting(self, agent1, agent2):
@@ -391,6 +412,8 @@ class Game():
         print("meeting: " + agent1.ID + " und " +agent2.ID)
         action_agent1 = agent1.meeting(agent2)
         action_agent2 = agent2.meeting(agent1)
+        # TODO: both on a gold field
+        # TODO: items
         if action_agent1 == "rob":
             if action_agent2 == "rob":
                 # TODO: result?
@@ -434,11 +457,7 @@ class Game():
             #TODO: errorhandling
             pass
             
-    def interaction(self, agents):
-        """
-        - defines the result of an interaction between all agents
-        """
-        print("interaction")
+
     
     def bidding(self, agent, agents, gold):
         """

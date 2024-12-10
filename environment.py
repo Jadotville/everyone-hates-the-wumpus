@@ -29,15 +29,15 @@ class Game():
             gold_progress.append(self.simulate(agents, grid_properties, prints))
         
         if game_properties["plot"]:
-            self.plot_gold_evolution(gold_progress)
+            self.plot_gold_evolution(gold_progress, agents)
 
 
-    def plot_gold_evolution(self, gold_evolution):
+    def plot_gold_evolution(self, gold_evolution, agents):
         gold_evolution = np.array(gold_evolution)
         gold_evolution = np.transpose(gold_evolution)
         x = list(range(1, gold_evolution.shape[1] + 1))
         for i in range(len(gold_evolution)):
-            plt.plot(x, gold_evolution[i], label="Agent " + str(i+1))
+            plt.plot(x, gold_evolution[i], label=type(agents[i]).__name__)
 
         plt.xlabel('Moves')
         plt.ylabel('Gold Amount')

@@ -7,6 +7,8 @@ import numpy as np
 
 
 class Game():
+    ''' p1 : [n, message] => in n moves the player can make a radio again, when message != "" -> the player made this radio last move ''' # TODO Maybe saving all radio calls
+    radio_possible = {}
     def __init__(self, agents, grid_properties, game_properties, prints=True):
         """
         - executes the simulations
@@ -19,7 +21,8 @@ class Game():
             for i in range(len(agents)):
                 agents[i].ID = "p" + str(i + 1)
                 agents[i].gold = 0
-        
+                self.radio_possible["p" + str(i+1)] = [0, ""]
+
         prints = game_properties["prints"]
         
         gold_progress = []
@@ -119,9 +122,19 @@ class Game():
         while not self.is_game_over(agents) and max_number_of_moves > move_counter:            
             if prints:
                 print("\nMove: ", move_counter)
-            
-            # every agent makes a move
+            if prints:
+                print(self.radio_possible)
+
+            # get all message with player name
+            messages = {}
+            for key,message in self.radio_possible.items():
+                if self.radio_possible[key][1] == '':
+                    messages[key] = ''
+                else:
+                    messages[key] = self.radio_possible[key][1][1]
+
             for agent in agents:
+                agent.messages = messages
                 grid[agent.position[0]][agent.position[1]]["agents"] = []
                 if agent.status == Status.dead:
                     continue
@@ -148,18 +161,34 @@ class Game():
                     for every_agent in field["agents"]:
                         every_agent.gold += 12//len(field["agents"])
                     field["state"] = None
-            
-            
+
+            # radio
+            for agent in agents:
+                self.radio_possible[agent.ID][1] = ""
+                if self.radio_possible[agent.ID][0] == 0:
+                    radio_call = agent.radio()
+                    if radio_call is []:
+                        pass
+                    elif len(radio_call) == 2:
+                        if radio_call[0] == "inform":
+                            self.radio_possible[agent.ID][1] = radio_call
+                            self.radio_possible[agent.ID][0] = 5
+                    else:
+                        # TODO: errorhandling
+                        pass
+                else:
+                    self.radio_possible[agent.ID][0] -= 1
+
             # prints the grid
             if prints:
                 self.print_grid(grid)
                 print("Gold: ", self.print_gold(agents))
                 print("Positions: ", self.print_positions(agents))
-        
+
         gold = []
         for agent in agents:
             gold.append(agent.gold)
-        
+
         return gold
 
 
@@ -431,13 +460,35 @@ class Game():
                 agent.status = Status.dead
                 continue
             
+
+            for other_agent in grid[agent.position[0]][agent.position[1]]["agents"]:
+                self.meeting(agent, other_agent, prints)
+
+            grid[agent.position[0]][agent.position[1]]["agents"].append(agent)
+        
+        
+    def interactions(self, grid, agents):
+        reactions = {}
+        
+        for agent in agents:
             
             for other_agent in grid[agent.position[0]][agent.position[1]]["agents"]:
-                self.meeting(agent, other_agent, prints)         
+                self.meeting(agent, other_agent)
             
-            grid[agent.position[0]][agent.position[1]]["agents"].append(agent)
-         
+            if grid[agent.position[0]][agent.position[1]]["state"] == State.GOLD:
+                reaction = agent.found_gold()
+                reactions[agent] = reaction
+    
+        self.gold_digging(reactions, grid)    
 
+             
+    def gold_digging(self, reactions, grid):
+        # TODO: implement gold digging
+        # for agent, reaction in reactions:
+        #     if reaction == Gold_found.dig:
+        #         grid[agent.position[0]][agent.position[1]]["state"] = None
+        #         agent.gold += 1      
+        pass
 
 
     def meeting(self, agent1, agent2, prints):

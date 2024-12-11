@@ -21,7 +21,9 @@ class Agent(ABC):
     gold = 0
     arrows = 0
     opinions = {}
-    
+
+    messages = {}
+
     @abstractmethod
     def move(self):
         """
@@ -77,7 +79,14 @@ class Agent(ABC):
     
     def bidding(self, agent, gold):
         pass
-    
+
+    @abstractmethod
+    def radio(self):
+        '''
+        returns 2element array with [performative verb, content]
+        if nothing to say empty list
+        '''
+        pass
     
     
 class PlayerAgent(Agent):
@@ -104,7 +113,9 @@ class PlayerAgent(Agent):
     
     def bidding(self, agent, gold):
         pass
-    
+
+    def radio(self):
+        pass
 
 class AIAgent(Agent):
 
@@ -154,6 +165,10 @@ class AIAgent(Agent):
     
     def bidding(self, agent, gold):
         pass
+
+    def radio(self):
+        pass
+
     
 # agent that moves randomly    
 class RandomAgent(AIAgent):
@@ -181,3 +196,14 @@ class RandomAgent(AIAgent):
     
     def bidding(self, agent, gold):
         pass
+
+    def radio(self):
+        content = []
+        messages = ["","Message1", "Message2", "Message3"]
+        message_chosen = random.choice(messages)
+        if message_chosen == "":
+            return content
+        content.append("inform")
+        content.append(message_chosen)
+
+        return content

@@ -9,7 +9,8 @@ if __name__ == '__main__':
     grid_properties = {
         "size": 4, # must be odd
         "num_pits": 0, # this should be lower than size*size/3
-        "num_wumpi": 0,
+        "num_s_wumpi": 0,
+        "num_l_wumpi": 0,
         "num_gold": 2,
         "num_armor": 2,
         "num_swords": 2,

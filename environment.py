@@ -386,7 +386,7 @@ class Game():
             for col in range(size):
                 state = grid[row][col]['state']
                 
-                if state not in perceptions.keys:
+                if state not in perceptions.keys():
                     continue
                 
                 # place perceptions in adjacent fields

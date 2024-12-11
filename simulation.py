@@ -4,8 +4,6 @@ from agent import RandomAgent
 
 if __name__ == '__main__':
     
-    agents = [RandomAgent(), RandomAgent(), RandomAgent(), RandomAgent()]       
-    
     grid_properties = {
         "size": 4, # must be odd
         "num_pits": 0, # this should be lower than size*size/3
@@ -22,5 +20,6 @@ if __name__ == '__main__':
         "plot": True,
     }
     
+    agents = [RandomAgent(grid_properties["size"]), RandomAgent(grid_properties["size"]), RandomAgent(grid_properties["size"]), RandomAgent(grid_properties["size"])]       
     
     game = Game(agents, grid_properties, game_properties)

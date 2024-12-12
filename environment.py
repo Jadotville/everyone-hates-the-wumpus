@@ -459,53 +459,21 @@ class Game():
         # TODO: items
         if action_agent1 == "rob":
             if action_agent2 == "rob":
-                # TODO: result?
-                pass
-            elif action_agent2 == "chat":
-                # TODO: result?
-                pass
-            elif action_agent2 == "nothing":
-                # TODO: result?
-                pass
+                agent1.meeting_result(agent2, "rob")                
+                agent1.gold -= 5
+                agent2.meeting_result(agent1, "rob")
+                agent2.gold -= 5
             else:
-                # TODO: errorhandling
-                pass
-        elif action_agent1 == "chat":
-            if action_agent2 == "rob":
-                # TODO: result?
-                pass
-            elif action_agent2 == "chat":
-                # TODO: result?
-                pass
-            elif action_agent2 == "nothing":
-                # TODO: result?
-                pass
-            else:
-                # TODO: errorhandling
-                pass
-        elif action_agent1 == "nothing":
-            if action_agent2 == "rob":
-                # TODO: result?
-                pass
-            elif action_agent2 == "chat":
-                # TODO: result?
-                pass
-            elif action_agent2 == "nothing":
-                # TODO: result?
-                pass
-            else:
-                # TODO: errorhandling
-                pass
+                agent1.meeting_result(agent2, "nothing")
+                agent1.gold += 5
+                agent2.meeting_result(agent1, "rob") 
+                agent2.gold -= 8
         else:
-            #TODO: errorhandling
-            pass
-            
-
-    
-    def bidding(self, agent, agents, gold):
-        """
-        - defines the result of a bidding between all agents
-        """
-        print("bidding")
-        
-            
+            if action_agent2 == "rob":
+                agent1.meeting_result(agent2, "rob")
+                agent1.gold -= 8
+                agent2.meeting_result(agent1, "nothing")
+                agent2.gold += 5
+            else:
+                agent1.meeting_result(agent2, "nothing")
+                agent2.meeting_result(agent1, "nothing")           

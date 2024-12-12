@@ -18,7 +18,7 @@ def near_objects(pos, objects, dist=0):
             return True
     return False
 
-def get_neighbors(grid, row, col, consider_obstacles=True, return_format="coords"):
+def get_neighbors(grid, row, col, consider_obstacles=False, return_format="coords"):
     """
     UNTESTED: Returns a list of adjacent positions/direction-strings via Von Neumann neighborhood.
     
@@ -42,7 +42,7 @@ def get_neighbors(grid, row, col, consider_obstacles=True, return_format="coords
         if 0 <= n_row < size and 0 <= n_col < size:
             
             # optional: agents should go around pits and wumpi
-            if consider_obstacles == True:
+            if consider_obstacles:
                 if (State.PIT in grid[n_row][n_col] 
                 or State.S_WUMPUS in grid[n_row][n_col]
                 or State.L_WUMPUS in grid[n_row][n_col]):
@@ -124,3 +124,8 @@ def convert_to_direction(pos_a, pos_b):
     y = pos_b[1] - pos_a[1]
     
     return convert[(x,y)]
+
+def append_unique(list, value):
+    """Appends the value to the list only if it is not already present."""
+    if value not in list:
+        list.append(value)

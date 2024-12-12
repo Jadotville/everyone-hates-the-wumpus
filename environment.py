@@ -1,7 +1,7 @@
 import copy
 from enums import State, Perception, Gold_found, Status # for storing additional information in a grid's field
 from random import randint, shuffle # for randomized world generation
-from utils import get_neighbors
+from utils import get_neighbors, append_unique, manhattan
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -76,7 +76,6 @@ class Game():
         for agent in agents:
             positions += agent.ID + ": " + (str(agent.position) if agent.status == Status.alive else "dead") + " " # element-format: dict {"position": (int,int), "amount": int}
         return(positions)
-         # element-format: dict {"position": (int,int), "name": string}
         
     def print_gold(self, agents):
         """prints the gold of the agents"""
@@ -113,7 +112,7 @@ class Game():
             self.print_grid(grid)
 
 
-        max_number_of_moves = grid_properties["size"] * grid_properties["size"] * 3
+        max_number_of_moves = grid_properties["size"] * grid_properties["size"] * 1
 
 
         #runs the game loop
@@ -142,7 +141,12 @@ class Game():
                 grid[agent.position[0]][agent.position[1]]["agents"] = []
                 if agent.status == Status.dead:
                     continue
+                
+                # agent perceives and then moves
+                agent.perceptions = copy.copy(grid[agent.position[0]][agent.position[1]]["perceptions"])
+                # print("Game: Agent " + agent.ID + " should perceive " + str(agent.perceptions))
                 move=agent.move()
+                
                 if move== "up":
                     agent.position[0]-=1
                 elif move== "down":
@@ -234,9 +238,10 @@ class Game():
             grid[size - 1][ size - 1]["agents"].append(agents[3])
             
 
-        # Order matters: place pits, then objects
+        # Order matters (probably): place pits -> wumpi -> objects
         grid = self.spawn_pits(agents, grid, grid_properties)
-        grid = self.spawn_objects(grid, grid_properties)
+        grid = self.spawn_wumpi(agents, grid, grid_properties)
+        grid = self.spawn_objects(agents, grid, grid_properties)
         self.spawn_perceptions(grid) # untested, comment this line out, if something breaks
 
         return grid
@@ -244,7 +249,8 @@ class Game():
     
     def spawn_pits(self, agents, grid, grid_properties):
         """
-        New implementation for spawning State.PITs specifically. Randomly fills fields skipping agents' positions.
+        New implementation for spawning State.PITs specifically. Randomly fills fields, while skipping agents' positions. 
+        - Plz spawn in the following order: spawn_pits() -> spawn_wumpi() -> spawn_objects()
         - keep the amount of pits lower than a third of the field
         """
         # Extract properties for easier access
@@ -254,10 +260,12 @@ class Game():
         for agent in agents:
             agent_positions.append((agent.position[0], agent.position[1]))
         
-        # Create a flat list of grid positions, exclude agent positions
+        # Create a flat list of grid positions, exclude positions near agents
         all_positions = [(row, col) for row in range(size) for col in range(size)]
-        for pos in agent_positions:
-            all_positions.remove(pos)
+        for pos_a in all_positions:
+            for pos_b in agent_positions:
+                if manhattan(pos_a, pos_b) <= 1:
+                    all_positions.remove(pos_a)
         
         attempts = 0
         all_accessible = False # grid hasn't been checked for full acessibility
@@ -289,35 +297,87 @@ class Game():
         
         return grid
     
-    def spawn_objects(self, grid, grid_properties):
-        """New Implementation: Places wumpi, gold, armor and optionally more in the grid."""
+    def spawn_objects(self, agents, grid, grid_properties):
+        """
+        New Implementation: Places gold, armor and optionally more in the grid. 
+        - Plz spawn in the following order: spawn_pits() -> spawn_wumpi() -> spawn_objects()
+        """
         # Extract properties for easier access
         size = grid_properties["size"]
-        num_s_wumpi = grid_properties["num_s_wumpi"]
-        num_l_wumpi = grid_properties["num_l_wumpi"]
         num_gold = grid_properties["num_gold"]
         num_armor = grid_properties["num_armor"]
         num_swords = grid_properties['num_swords']
-
-        # Total number of objects to place
-        total_objects =  num_s_wumpi + num_l_wumpi + num_gold + num_armor + num_swords
-
-        # Create a flat list of grid positions, remove fields with agents and pits
+        agent_positions = []
+        for agent in agents:
+            agent_positions.append((agent.position[0], agent.position[1]))
+        
+        # Create a flat list of grid positions
         all_positions = [(row, col) for row in range(size) for col in range(size)]
+
+        # remove fields with and pits and wumpi
         for row, col in all_positions:
             if grid[row][col]["state"] != None:
                 all_positions.remove((row,col))
+                
+        # Total number of objects to place
+        total_objects = num_gold + num_armor + num_swords # + num_s_wumpi + num_l_wumpi
         
         # Shuffle positions and select a subset for object placement
         shuffle(all_positions)
         selected_positions = all_positions[:total_objects]
 
         # Create a list of objects to place
-        objects = ([State.S_WUMPUS] * num_s_wumpi + 
-                   [State.L_WUMPUS] * num_l_wumpi + 
-                   [State.GOLD] * num_gold + 
+        objects = ([State.GOLD] * num_gold + 
                    [State.ARMOR] * num_armor +
                    [State.SWORD] * num_swords)
+        
+        # Shuffle the objects
+        shuffle(objects)
+
+        # Place objects in the selected grid positions
+        for pos, obj in zip(selected_positions, objects):
+            row, col = pos
+            grid[row][col]["state"] = obj
+        
+        return grid
+    
+    def spawn_wumpi(self, agents, grid, grid_properties, spawn_dist=2):
+        """
+        New Implementation: Places just wumpi in the grid. 
+        - Plz spawn in the following order: spawn_pits() -> spawn_wumpi() -> spawn_objects()
+        
+        :param int spawn_dist: generates wumpi atleast x fields away from Agents' spawn
+        """
+        # Extract properties for easier access
+        size = grid_properties["size"]
+        num_s_wumpi = grid_properties["num_s_wumpi"]
+        num_l_wumpi = grid_properties["num_l_wumpi"]
+        agent_positions = []
+        for agent in agents:
+            agent_positions.append((agent.position[0], agent.position[1]))
+        
+        # Create a flat list of grid positions, remove agent positions (no spawn-camping wumpi allowed lol)
+        all_positions = [(row, col) for row in range(size) for col in range(size)]
+        filtered_positions = [
+            pos_a for pos_a in all_positions
+            if all(manhattan(pos_a, pos_b) >= spawn_dist for pos_b in agent_positions)
+        ]
+
+        # remove fields with and pits
+        for row, col in filtered_positions:
+            if grid[row][col]["state"] != None:
+                filtered_positions.remove((row,col))
+                
+        # Total number of objects to place
+        total_objects = num_s_wumpi + num_l_wumpi
+        
+        # Shuffle positions and select a subset for object placement
+        shuffle(filtered_positions)
+        selected_positions = filtered_positions[:total_objects]
+
+        # Create a list of objects to place
+        objects = ([State.S_WUMPUS] * num_s_wumpi + 
+                   [State.L_WUMPUS] * num_l_wumpi)
         
         # Shuffle the objects
         shuffle(objects)
@@ -397,7 +457,7 @@ class Game():
                 # place perceptions in adjacent fields
                 perception = perceptions[state]
                 for n_row, n_col in get_neighbors(grid, row, col, consider_obstacles=False):
-                    grid[n_row][n_col]['perceptions'].append(perception)
+                    append_unique(grid[n_row][n_col]['perceptions'], perception)
         
     def update_grid(self, grid, agents, prints):
         for agent in agents:
@@ -425,12 +485,13 @@ class Game():
                 agent.status = Status.dead
                 continue
             
-            agent.perceptions = copy.deepcopy(grid[agent.position[0]][agent.position[1]]["perceptions"])
-
+            # agent.perceptions = copy.deepcopy(grid[agent.position[0]][agent.position[1]]["perceptions"])
+            # print("Game: Agent " + agent.ID + " should perceive " + agent.perceptions)
             for other_agent in grid[agent.position[0]][agent.position[1]]["agents"]:
                 self.meeting(agent, other_agent, prints)
 
             grid[agent.position[0]][agent.position[1]]["agents"].append(agent)
+            self.spawn_perceptions(grid) # in case any wumpi got killed, removes their perceptions (alternatively do this specifically after killing a wumpus)
         
         
     def interactions(self, grid, agents):

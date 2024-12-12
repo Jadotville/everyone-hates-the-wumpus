@@ -218,15 +218,40 @@ class AIAgent(Agent):
     def meeting_result(self, other_agent, result):
         pass
 
-    def found_gold(self):
-        pass
-    
-    def bidding(self, agent, gold):
-        pass
-
     def radio(self):
         pass
 
+
+# agent that moves only right
+class RightAgent(AIAgent):
+    
+    def move(self):
+        return "right"
+    
+    def action(self):
+        pass
+    
+    def conversation(self):
+        pass
+    
+    def meeting(self, agent):
+        # TODO: implement the meeting method
+        pass
+    
+    def meeting_result(self, other_agent, result):
+        pass
+
+    def radio(self):
+        content = []
+        messages = ["","Message1", "Message2", "Message3"]
+        message_chosen = random.choice(messages)
+        if message_chosen == "":
+            return content
+        content.append("inform")
+        content.append(message_chosen)
+
+        return content
+    
     
 # agent that moves randomly    
 class RandomAgent(AIAgent):
@@ -256,11 +281,44 @@ class RandomAgent(AIAgent):
     
     def meeting_result(self, other_agent, result):
         pass
+
+    def radio(self):
+        content = []
+        messages = ["","Message1", "Message2", "Message3"]
+        message_chosen = random.choice(messages)
+        if message_chosen == "":
+            return content
+        content.append("inform")
+        content.append(message_chosen)
+
+        return content
+
+# agent that moves randomly    
+class RandomBadAgent(AIAgent):
     
-    def found_gold(self):
-        return Gold_found.dig
+    def move(self):
+        status = self.plan["status"]
+        if status == Plan.EXPLORE:
+            safe_moves = self.select_safe_moves()
+            next_move = random.choice(safe_moves)
+        elif status == Plan.WAIT:
+            next_move = None
+        elif status == Plan.GO_TO:
+            next_move = a_star_search(self.knowledge, (self.position[0], self.position[1]), self.plan["target_pos"])[0]
+        
+        self.update_plan()
+        return next_move
     
-    def bidding(self, agent, gold):
+    def action(self):
+        pass
+    
+    def conversation(self):
+        pass
+    
+    def meeting(self, agent):
+        return "rob"
+    
+    def meeting_result(self, other_agent, result):
         pass
 
     def radio(self):

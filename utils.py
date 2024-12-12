@@ -43,9 +43,9 @@ def get_neighbors(grid, row, col, consider_obstacles=True, return_format="coords
             
             # optional: agents should go around pits and wumpi
             if consider_obstacles == True:
-                if (grid[n_row][n_col] == State.PIT 
-                or grid[n_row][n_col] == State.S_WUMPUS
-                or grid[n_row][n_col] == State.L_WUMPUS):
+                if (State.PIT in grid[n_row][n_col] 
+                or State.S_WUMPUS in grid[n_row][n_col]
+                or State.L_WUMPUS in grid[n_row][n_col]):
                     continue
             
             # add coordinates or direction as string
@@ -104,3 +104,23 @@ def reconstruct_path(came_from, current):
         total_path.append(current)
     total_path.reverse()
     return total_path
+
+def convert_to_direction(pos_a, pos_b):
+    """
+    Transforms the difference of position a and b to a direction-string. Make sure, the positions have a manhattan-distance of 1. Possible returns:
+    - "up"/"down"/"left"/"right"
+    """
+    if manhattan(pos_a, pos_b) != 1:
+        print("utils: ERROR-couldn't convert " + pos_b + "-" + pos_a + " into a direction.")
+        return None
+    
+    convert = {
+        (-1, 0): "up",
+        (1, 0): "down",
+        (0, -1): "left",
+        (0, 1): "right"
+    }
+    x = pos_b[0] - pos_a[0]
+    y = pos_b[1] - pos_a[1]
+    
+    return convert[(x,y)]

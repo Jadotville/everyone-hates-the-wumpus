@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enums import State, Perception, Gold_found, Status, Plan
-from utils import get_neighbors, a_star_search
+from utils import get_neighbors, a_star_search, convert_to_direction
 
 import random
 
@@ -171,9 +171,9 @@ class AIAgent(Agent):
         # check, if the agent considers the neighboring fields unsafe
         neighbors = get_neighbors(self.knowledge, self.position[0], self.position[1], return_format="full")
         for row, col, dir in neighbors:
-            if ( self.knowledge[row][col]
-                or self.knowledge[row][col] == State.S_WUMPUS
-                or self.knowledge[row][col] == State.L_WUMPUS):
+            if (State.PIT in self.knowledge[row][col]
+                or State.S_WUMPUS in self.knowledge[row][col]
+                or State.L_WUMPUS in self.knowledge[row][col]):
                 is_move_safe[dir] = False
         
         for move, isSafe in is_move_safe.items():
@@ -232,6 +232,8 @@ class AIAgent(Agent):
 class RandomAgent(AIAgent):
     
     def move(self):
+        # update first, to prevent errors, e.g. trying to go to a field you already arrived at
+        self.update_plan()
         status = self.plan["status"]
         if status == Plan.EXPLORE:
             safe_moves = self.select_safe_moves()
@@ -239,9 +241,11 @@ class RandomAgent(AIAgent):
         elif status == Plan.WAIT:
             next_move = None
         elif status == Plan.GO_TO:
-            next_move = a_star_search(self.knowledge, (self.position[0], self.position[1]), self.plan["target_pos"])[0]
+            next_pos = a_star_search(self.knowledge, (self.position[0], self.position[1]), (self.plan["target_pos"][0],self.plan["target_pos"][1]))[1]
+            # print(next_pos)
+            next_move = convert_to_direction(self.position, next_pos)
+            # print(next_move)
         
-        self.update_plan()
         return next_move
     
     def action(self):

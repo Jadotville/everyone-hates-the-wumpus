@@ -391,7 +391,7 @@ class Game():
                 
                 # place perceptions in adjacent fields
                 perception = perceptions[state]
-                for n_row, n_col in get_neighbors(grid, row, col):
+                for n_row, n_col in get_neighbors(grid, row, col, consider_obstacles=False):
                     grid[n_row][n_col]['perceptions'].append(perception)
         
     def update_grid(self, grid, agents, prints):

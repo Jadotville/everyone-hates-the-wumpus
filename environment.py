@@ -9,14 +9,15 @@ import numpy as np
 class Game():
     ''' p1 : [n, message] => in n moves the player can make a radio again, when message != "" -> the player made this radio last move ''' # TODO Maybe saving all radio calls
     radio_possible = {}
+    killed_wumpi = 0
+    
     def __init__(self, agents, grid_properties, game_properties, prints=True):
         """
         - executes the simulations
         - assigns the agents their IDs and setting their gold to 0
         """
         if not agents:
-            # TODO: errorhandling
-            pass
+            raise ValueError("No agents provided")
         else:
             for i in range(len(agents)):
                 agents[i].ID = "p" + str(i + 1)
@@ -85,7 +86,7 @@ class Game():
         return(gold)
 
 
-    def is_game_over(self, agents):
+    def is_game_over(self, agents, num_wumpi):	
         """checks if the game is over"""
         living_agents = False
         for agent in agents:
@@ -93,11 +94,10 @@ class Game():
                 living_agents = True
                 break
         
-        living_wumpi = False
-        # TODO: check if wumpi are still alive
-        living_wumpi = True
+        if num_wumpi - self.killed_wumpi <=0:
+            return False
         
-        return not living_agents or not living_wumpi
+        return not living_agents
         
     def simulate(self, agents, grid_properties, prints):
         """
@@ -117,9 +117,11 @@ class Game():
 
 
         #runs the game loop
-        # TODO: add break criteria
         move_counter = 0
-        while not self.is_game_over(agents) and max_number_of_moves > move_counter:            
+        
+        num_wumpi = grid_properties["num_s_wumpi"] + grid_properties["num_l_wumpi"]
+        
+        while not self.is_game_over(agents, num_wumpi) and max_number_of_moves > move_counter:            
             if prints:
                 print("\nMove: ", move_counter)
             if prints:
@@ -134,6 +136,8 @@ class Game():
                     messages[key] = self.radio_possible[key][1][1]
 
             for agent in agents:
+                if agent.status == Status.dead:
+                    continue
                 agent.messages = messages
                 grid[agent.position[0]][agent.position[1]]["agents"] = []
                 if agent.status == Status.dead:
@@ -147,7 +151,6 @@ class Game():
                     agent.position[1]-=1
                 elif move== "right":
                     agent.position[1]+=1
-                agent.perceptions = copy.deepcopy(grid[agent.position[0]][agent.position[1]]["perceptions"])
             move_counter += 1
             
             
@@ -156,6 +159,8 @@ class Game():
             self.update_grid(grid, agents, prints)
 
             for agent in agents:
+                if agent.status == Status.dead:
+                    continue
                 field = grid[agent.position[0]][agent.position[1]]
                 if field["state"] == State.GOLD:
                     for every_agent in field["agents"]:
@@ -420,6 +425,7 @@ class Game():
                 agent.status = Status.dead
                 continue
             
+            agent.perceptions = copy.deepcopy(grid[agent.position[0]][agent.position[1]]["perceptions"])
 
             for other_agent in grid[agent.position[0]][agent.position[1]]["agents"]:
                 self.meeting(agent, other_agent, prints)
@@ -442,15 +448,6 @@ class Game():
         self.gold_digging(reactions, grid)    
 
              
-    def gold_digging(self, reactions, grid):
-        # TODO: implement gold digging
-        # for agent, reaction in reactions:
-        #     if reaction == Gold_found.dig:
-        #         grid[agent.position[0]][agent.position[1]]["state"] = None
-        #         agent.gold += 1      
-        pass
-
-
     def meeting(self, agent1, agent2, prints):
         """
         - defines the result of a meeting between two agents
@@ -459,7 +456,6 @@ class Game():
             print("meeting: " + agent1.ID + " und " +agent2.ID)
         action_agent1 = agent1.meeting(agent2)
         action_agent2 = agent2.meeting(agent1)
-        # TODO: both on a gold field
         # TODO: items
         if action_agent1 == "rob":
             if action_agent2 == "rob":

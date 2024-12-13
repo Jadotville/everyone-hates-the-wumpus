@@ -47,6 +47,7 @@ class Plan(Enum):
     This provides a fixed selection of possible plans for agents. Current options:
     - explore, wait, go_to
     """
-    EXPLORE = "explore" # unobligated, go to random/unexplored fields
+    RANDOM = "random" # unobligated, go to random fields
     WAIT = "wait" # not moving, until plan is changed by environment/other agent (e.g. waiting for another agent to kill wumpus together)
     GO_TO = "go_to" # moving towards a given field (e.g. another agent's position, to kill wumpus together)
+    EXPLORE = "explore" # go and find unexplored fields randomly/systematically

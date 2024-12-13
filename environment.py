@@ -112,7 +112,7 @@ class Game():
             self.print_grid(grid)
 
 
-        max_number_of_moves = grid_properties["size"] * grid_properties["size"] * 1
+        max_number_of_moves = grid_properties["size"] * grid_properties["size"] * 3
 
 
         #runs the game loop
@@ -247,11 +247,13 @@ class Game():
         return grid
     
     
-    def spawn_pits(self, agents, grid, grid_properties):
+    def spawn_pits(self, agents, grid, grid_properties, spawn_dist=2):
         """
         New implementation for spawning State.PITs specifically. Randomly fills fields, while skipping agents' positions. 
         - Plz spawn in the following order: spawn_pits() -> spawn_wumpi() -> spawn_objects()
         - keep the amount of pits lower than a third of the field
+        
+        :param int spawn_dist: generates wumpi atleast x fields away from Agents' spawn
         """
         # Extract properties for easier access
         size = grid_properties["size"]
@@ -262,18 +264,18 @@ class Game():
         
         # Create a flat list of grid positions, exclude positions near agents
         all_positions = [(row, col) for row in range(size) for col in range(size)]
-        for pos_a in all_positions:
-            for pos_b in agent_positions:
-                if manhattan(pos_a, pos_b) <= 1:
-                    all_positions.remove(pos_a)
+        filtered_positions = [
+            pos_a for pos_a in all_positions
+            if all(manhattan(pos_a, pos_b) >= spawn_dist for pos_b in agent_positions)
+        ]
         
         attempts = 0
         all_accessible = False # grid hasn't been checked for full acessibility
         while not all_accessible:
             attempts += 1
             # Shuffle positions and select a subset for object placement
-            shuffle(all_positions)
-            selected_positions = all_positions[:num_pits]
+            shuffle(filtered_positions)
+            selected_positions = filtered_positions[:num_pits]
 
             grid_copy = copy.deepcopy(grid)
             

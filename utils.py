@@ -1,5 +1,6 @@
 import heapq
 from enums import State
+from random import random
 
 def manhattan(pos_a, pos_b):
     """Calculate manhattan distance between position a and b"""
@@ -18,12 +19,13 @@ def near_objects(pos, objects, dist=0):
             return True
     return False
 
-def get_neighbors(grid, row, col, consider_obstacles=False, return_format="coords"):
+def get_neighbors(grid, row, col, consider_obstacles=False, return_format="coords", chance=1):
     """
     UNTESTED: Returns a list of adjacent positions/direction-strings via Von Neumann neighborhood.
     
     :param bool consider_obstacles: option to also consider pits/wumpi as neighboors
     :param string return_format: option to configure return ("coords"->coordinates, "full"->coordinates and directions)
+    :param float chance: optional value between [0,1] to only have a chance of considering something an obstacle (only works with consider_obstacles=True)
     """
     directions = [
         (-1, 0, "up"),
@@ -41,11 +43,11 @@ def get_neighbors(grid, row, col, consider_obstacles=False, return_format="coord
         # Check if the new position is within bounds
         if 0 <= n_row < size and 0 <= n_col < size:
             
-            # optional: agents should go around pits and wumpi
-            if consider_obstacles:
-                if (State.PIT in grid[n_row][n_col] 
-                or State.S_WUMPUS in grid[n_row][n_col]
-                or State.L_WUMPUS in grid[n_row][n_col]):
+            # optional: agents should go around pits and wumpi, but risks allowed
+            if consider_obstacles and random() <= chance:
+                if (State.PIT in grid[n_row][n_col]["state"] 
+                or State.S_WUMPUS in grid[n_row][n_col]["state"]
+                or State.L_WUMPUS in grid[n_row][n_col]["state"]):
                     continue
             
             # add coordinates or direction as string
@@ -83,7 +85,7 @@ def a_star_search(grid, start, goal):
         if current == goal:
             return reconstruct_path(came_from, current)
 
-        neighbors = get_neighbors(grid, current[0], current[1])
+        neighbors = get_neighbors(grid, current[0], current[1], consider_obstacles=True)
         
         for neighbor in neighbors:
             tentative_g_score = g_score[current] + 1
@@ -125,7 +127,19 @@ def convert_to_direction(pos_a, pos_b):
     
     return convert[(x,y)]
 
-def append_unique(list, value):
-    """Appends the value to the list only if it is not already present."""
-    if value not in list:
-        list.append(value)
+def append_unique(list, value, safe=False):
+    """
+    Appends the value to the list only if it is not already present.
+    
+    :param bool safe: only append, if the item is not "blocked" (list-format: [{"state": [...], "blocks": y}, ...] appends only if value != y)
+    """
+    if safe:
+        if value not in list["state"] and value not in list["blocks"]:
+            list["state"].append(value)
+    else:
+        if value not in list:
+            list.append(value)
+
+def list_difference(list_a, list_b):
+    """Returns a list of items exclusively in list_a."""
+    return [item for item in list_a if item not in list_b]

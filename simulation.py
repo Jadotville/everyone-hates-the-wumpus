@@ -1,5 +1,5 @@
 from environment import Game
-from agent import RandomAgent, RightAgent, RandomBadAgent
+from agent import RandomAgent, RightAgent, RandomBadAgent, CooperativeAgent, DefensiveAgent
 from enums import Plan
 
 if __name__ == '__main__':
@@ -36,7 +36,13 @@ if __name__ == '__main__':
     
     # ------ START SIMULATION ------
     
-    agents = [RightAgent(size=size), RandomBadAgent(size=size), RandomAgent(size=size), RandomAgent(size=size)]       
+    agents = [
+        CooperativeAgent(size=size), 
+        RandomAgent(size=size), 
+        #RightAgent(size=size), 
+        DefensiveAgent(size = size),
+        #RandomBadAgent(size=size)
+    ]         
     
     game = Game(agents, grid_properties, game_properties)
     

@@ -379,3 +379,149 @@ class RandomBadAgent(AIAgent):
         content.append(message_chosen)
 
         return content
+
+# Cooperative Agent to get gold efficiently
+class CooperativeAgent(AIAgent):
+    
+    def __init__(self, size):
+        super().__init__(size)
+        self.gold_positions = []  # List of known gold positions
+        self.shared_knowledge = {}  # Stores messages received from other agents
+    
+    def move(self):
+        # Process received messages
+        for key, message in self.messages.items():
+            if "Gold at" in message:
+                gold_pos = eval(message.split("at")[1])  # Extract the position
+                if gold_pos not in self.gold_positions:
+                    self.gold_positions.append(gold_pos)
+        
+        # If gold is known, plan to move there
+        if self.gold_positions:
+            target = self.gold_positions[0]  # Go to the first known gold position
+            self.plan = {"status": Plan.GO_TO, "target_pos": target}
+            path = a_star_search(self.knowledge, tuple(self.position), target)
+            if path:
+                return path[0]  # Follow the first step in the path
+            else:
+                self.gold_positions.pop(0)  # Remove inaccessible gold
+        
+        # Default behavior: Continue exploring
+        self.plan["status"] = Plan.EXPLORE
+        safe_moves = self.select_safe_moves()
+        return random.choice(safe_moves) if safe_moves else None
+    
+    def update_knowledge(self):
+        # Update knowledge based on perceptions
+        if not self.perceptions:
+            neighbors = get_neighbors(self.knowledge, self.position[0], self.position[1])
+            for row, col in neighbors:
+                self.knowledge[row][col].append(State.SAFE)
+        for perception in self.perceptions:
+            if perception == Perception.BREEZE:
+                neighbors = get_neighbors(self.knowledge, self.position[0], self.position[1])
+                for row, col in neighbors:
+                    if State.SAFE not in self.knowledge[row][col]:
+                        self.knowledge[row][col].append(State.PIT)
+    
+    def action(self):
+        # Dig if gold is on the current field
+        if State.GOLD in self.perceptions:
+            if self.position in self.gold_positions:
+                self.gold_positions.remove(self.position)
+            return "dig"
+        return None
+
+    def meeting(self, agent):
+        # Do nothing during meetings, could be extended
+        return "nothing"
+
+    def meeting_result(self, other_agent, result):
+        # No specific reaction required
+        pass
+    
+    def radio(self):
+        # Share information about gold
+        content = []
+        if State.GOLD in self.perceptions:
+            content.append("inform")
+            content.append(f"Gold at {self.position}")
+        return content
+
+class DefensiveAgent(AIAgent):
+    def __init__(self, size):
+        super().__init__(size)
+        self.armor = 2  # Start with 2 pieces of armor to defend against robbing
+        self.survival_mode = False  # Focus on collecting gold rather than evasion
+
+    def move(self):
+        # Prioritize gold collection if gold is perceived
+        if State.GOLD in self.perceptions:
+            return "dig"
+        
+        # Use A* to navigate to known gold positions if available
+        for row in range(self.grid_size):
+            for col in range(self.grid_size):
+                if State.GOLD in self.knowledge[row][col]:
+                    path = a_star_search(self.knowledge, tuple(self.position), (row, col))
+                    if path:
+                        return path[0]
+        
+        # Default: Explore safely
+        safe_moves = self.select_safe_moves()
+        return random.choice(safe_moves) if safe_moves else None
+
+    def update_knowledge(self):
+        # Update knowledge based on perceptions
+        neighbors = get_neighbors(self.knowledge, self.position[0], self.position[1])
+        if not self.perceptions:
+            for row, col in neighbors:
+                self.knowledge[row][col] = [State.SAFE]
+        for perception in self.perceptions:
+            if perception == Perception.BREEZE:
+                for row, col in neighbors:
+                    if State.SAFE not in self.knowledge[row][col]:
+                        self.knowledge[row][col].append(State.PIT)
+
+    def meeting(self, agent):
+        # Defensive behavior in meetings
+        if isinstance(agent, RandomBadAgent):
+            if self.armor > 0:
+                return "nothing"  # Use armor to block robbing
+            else:
+                return "rob"  # Attempt to rob back if no armor is left
+
+        # Neutral behavior with cooperative agents
+        return "nothing"
+
+    def meeting_result(self, other_agent, result):
+        # Handle results of interactions
+        if result == "rob":
+            if self.armor > 0:
+                self.armor -= 1
+                print(f"{self.ID} blocked robbing with armor!")
+            else:
+                print(f"{self.ID} lost gold to {other_agent.ID}")
+        elif result == "nothing":
+            print(f"{self.ID} had a neutral interaction with {other_agent.ID}")
+        elif result == "fight" and other_agent.status == Status.dead:
+            print(f"{self.ID} defeated {other_agent.ID}!")
+
+    def radio(self):
+        # Share information about gold to cooperative agents
+        content = []
+        if State.GOLD in self.perceptions:
+            content.append("inform")
+            content.append(f"Gold at {self.position}")
+        return content
+
+    def action(self):
+        # Dig gold if present, otherwise no action
+        if State.GOLD in self.perceptions:
+            return "dig"
+        return None
+
+
+# TODO
+# explorative Agent
+# aggressive agent

@@ -496,17 +496,7 @@ class DefensiveAgent(AIAgent):
         return "nothing"
 
     def meeting_result(self, other_agent, result):
-        # Handle results of interactions
-        if result == "rob":
-            if self.armor > 0:
-                self.armor -= 1
-                print(f"{self.ID} blocked robbing with armor!")
-            else:
-                print(f"{self.ID} lost gold to {other_agent.ID}")
-        elif result == "nothing":
-            print(f"{self.ID} had a neutral interaction with {other_agent.ID}")
-        elif result == "fight" and other_agent.status == Status.dead:
-            print(f"{self.ID} defeated {other_agent.ID}!")
+        pass
 
     def radio(self):
         # Share information about gold to cooperative agents

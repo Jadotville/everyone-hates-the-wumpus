@@ -41,7 +41,7 @@ if __name__ == '__main__':
         RandomAgent(size=size), 
         #RightAgent(size=size), 
         DefensiveAgent(size = size),
-        #RandomBadAgent(size=size)
+        RandomBadAgent(size=size)
     ]         
     
     game = Game(agents, grid_properties, game_properties)

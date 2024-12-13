@@ -448,6 +448,7 @@ class CooperativeAgent(AIAgent):
             content.append(f"Gold at {self.position}")
         return content
 
+# defensive agent who collects gold and ist defensive against robbing
 class DefensiveAgent(AIAgent):
     def __init__(self, size):
         super().__init__(size)

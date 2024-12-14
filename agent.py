@@ -560,7 +560,39 @@ class DefensiveAgent(AIAgent):
             return "dig"
         return None
 
+class AggressiveAgent:
+    def move(self):
+        for agent_id, agent_position in self.opinions.items():
+            if agent_position not in self.target_positions:
+                self.target_positions.append(agent_position)
+        
+        if self.target_positions:
+            closest_target = min(
+                self.target_positions,
+                key=lambda position: abs(position[0] - self.current_position[0]) + abs(position[1] - self.current_position[1])
+            )
+            self.plan = {"Status": Plan.GO_TO, "Target Position": closest_target}
+            planned_path = a_star_search(self.knowledge, tuple(self.current_position), closest_target)
+            if planned_path:
+                return convert_to_direction(self.current_position, planned_path[1])
+            
+        safe_directions = self.select_safe_moves()
+        return random.choice(safe_directions) if safe_directions else None
+
+    def meeting(self, agent):
+        return "rob"
+    
+    def meeting_result(self, other_agent, result):
+        if result == "failed":
+            self.target_agents.remove(other_agent.position)
+        pass
+    
+    def action(self):
+        return None
+    
+    def radio(self):
+        return []
 
 # TODO
 # explorative Agent
-# aggressive agent
+

@@ -43,7 +43,7 @@ class Game():
         for i in range(len(gold_evolution)):
             plt.plot(x, gold_evolution[i], label=type(agents[i]).__name__)
 
-        plt.xlabel('Moves')
+        plt.xlabel('Games')
         plt.ylabel('Gold Amount')
         plt.title('Evolution of Gold Amounts')
         plt.legend()
@@ -92,9 +92,9 @@ class Game():
             if agent.status == Status.alive:
                 living_agents = True
                 break
-        
+            
         if num_wumpi - self.killed_wumpi <=0:
-            return False
+            return True
         
         return not living_agents
         
@@ -103,6 +103,8 @@ class Game():
         simulates the game given the agents, grid properties
         """
 
+        self.killed_wumpi = 0
+        
         # creates the initial grid on which the agents are placed after every move
         grid = self.grid_preperation(agents, grid_properties)
         
@@ -134,16 +136,41 @@ class Game():
                 else:
                     messages[key] = self.radio_possible[key][1][1]
 
+            shots = []    
+            
+            
             for agent in agents:
-                if agent.status == Status.dead:
-                    continue
-                agent.messages = messages
-                grid[agent.position[0]][agent.position[1]]["agents"] = []
-                if agent.status == Status.dead:
+                try:
+                    grid[agent.position[0]][agent.position[1]]["agents"] = []
+                except IndexError:
+                    agent.status = Status.dead
                     continue
                 
                 # agent perceives and then moves
                 agent.perceptions = copy.copy(grid[agent.position[0]][agent.position[1]]["perceptions"])
+                
+                agent.messages = messages         
+                    
+             
+            for agent in agents:
+                if agent.status == Status.dead:
+                    continue
+                shot = agent.shoot()
+                if shot and agent.arrows > 0:
+                    agent.arrows -= 1
+                    if shot == "up":
+                        shots.append([agent.position[0]-1, agent.position[1]])
+                    elif shot == "down":
+                        shots.append([agent.position[0]+1, agent.position[1]])
+                    elif shot == "left":
+                        shots.append([agent.position[0], agent.position[1]-1])
+                    else:
+                        shots.append([agent.position[0], agent.position[1]+1])
+            if prints:
+                print("Shots: ", shots)
+          
+            for agent in agents:
+                
                 # print("Game: Agent " + agent.ID + " should perceive " + str(agent.perceptions))
                 move=agent.move()
                 
@@ -155,12 +182,12 @@ class Game():
                     agent.position[1]-=1
                 elif move== "right":
                     agent.position[1]+=1
+                    
             move_counter += 1
             
             
-            
             # updates the agent positions on the grid
-            self.update_grid(grid, agents, prints)
+            self.update_grid(grid, agents, shots, prints)
 
             for agent in agents:
                 if agent.status == Status.dead:
@@ -462,7 +489,18 @@ class Game():
                 for n_row, n_col in get_neighbors(grid, row, col, consider_obstacles=False):
                     append_unique(grid[n_row][n_col]['perceptions'], perception)
         
-    def update_grid(self, grid, agents, prints):
+    def update_grid(self, grid, agents, shots, prints):
+        
+        for pos in shots:
+            if grid[pos[0]][pos[1]]["state"] == State.S_WUMPUS:
+                grid[pos[0]][pos[1]]["state"] = None
+                self.killed_wumpi += 1
+                
+            if grid[pos[0]][pos[1]]["state"] == State.L_WUMPUS and shots.count(pos) > 1:
+                grid[pos[0]][pos[1]]["state"] = None
+                self.killed_wumpi += 1
+            
+        
         for agent in agents:
             
             if agent.status == Status.dead:

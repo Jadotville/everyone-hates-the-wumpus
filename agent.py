@@ -84,6 +84,10 @@ class Agent(ABC):
     def radio(self):
         '''
         returns 2element array with [performative verb, content]
+        content in form of:
+        "w(x,y) p(x,y) s(m,x,y)"
+        => wumpus at x,y, postition at x,y, shoot in m moves at x,y
+        -1 if you dont want to give
         if nothing to say empty list
         '''
         pass
@@ -362,7 +366,9 @@ class RightAgent(AIAgent):
 
     def radio(self):
         content = []
-        messages = ["","Message1", "Message2", "Message3"]
+        three_tuple = [[(1,2), (2,1), (3,2,9)], [(8,4), (3,1), (3,7,5)], [(3,7), (4,1), (4,7,5)]]
+        three_tuple_chosen = random.choice(three_tuple)
+        messages = ["",f"w({three_tuple_chosen[0][0]},{three_tuple_chosen[0][1]}) p({three_tuple_chosen[1][0]},{three_tuple_chosen[1][1]}) s({three_tuple_chosen[2][0]},{three_tuple_chosen[2][1]},{three_tuple_chosen[2][2]})"]
         message_chosen = random.choice(messages)
         if message_chosen == "":
             return content
@@ -390,7 +396,9 @@ class RandomAgent(AIAgent):
 
     def radio(self):
         content = []
-        messages = ["","Message1", "Message2", "Message3"]
+        three_tuple = [[(1,2), (2,1), (3,2,9)], [(8,4), (3,1), (3,7,5)], [(3,7), (4,1), (4,7,5)]]
+        three_tuple_chosen = random.choice(three_tuple)
+        messages = ["",f"w({three_tuple_chosen[0][0]},{three_tuple_chosen[0][1]}) p({three_tuple_chosen[1][0]},{three_tuple_chosen[1][1]}) s({three_tuple_chosen[2][0]},{three_tuple_chosen[2][1]},{three_tuple_chosen[2][2]})"]
         message_chosen = random.choice(messages)
         if message_chosen == "":
             return content
@@ -398,7 +406,6 @@ class RandomAgent(AIAgent):
         content.append(message_chosen)
 
         return content
-  
 class RandomBadAgent(AIAgent):
     """
     Agent that moves randomly.
@@ -419,7 +426,9 @@ class RandomBadAgent(AIAgent):
 
     def radio(self):
         content = []
-        messages = ["","Message1", "Message2", "Message3"]
+        three_tuple = [[(1,2), (2,1), (3,2,9)], [(8,4), (3,1), (3,7,5)], [(3,7), (4,1), (4,7,5)]]
+        three_tuple_chosen = random.choice(three_tuple)
+        messages = ["",f"w({three_tuple_chosen[0][0]},{three_tuple_chosen[0][1]}) p({three_tuple_chosen[1][0]},{three_tuple_chosen[1][1]}) s({three_tuple_chosen[2][0]},{three_tuple_chosen[2][1]},{three_tuple_chosen[2][2]})"]
         message_chosen = random.choice(messages)
         if message_chosen == "":
             return content
@@ -500,11 +509,16 @@ class CooperativeAgent(AIAgent):
         self.last_meeting_results[other_agent.ID] = result
     
     def radio(self):
-        # Share information about gold
         content = []
-        if State.GOLD in self.perceptions:
-            content.append("inform")
-            content.append(f"Gold at {self.position}")
+        three_tuple = [[(1,2), (2,1), (3,2,9)], [(8,4), (3,1), (3,7,5)], [(3,7), (4,1), (4,7,5)]]
+        three_tuple_chosen = random.choice(three_tuple)
+        messages = ["",f"w({three_tuple_chosen[0][0]},{three_tuple_chosen[0][1]}) p({three_tuple_chosen[1][0]},{three_tuple_chosen[1][1]}) s({three_tuple_chosen[2][0]},{three_tuple_chosen[2][1]},{three_tuple_chosen[2][2]})"]
+        message_chosen = random.choice(messages)
+        if message_chosen == "":
+            return content
+        content.append("inform")
+        content.append(message_chosen)
+
         return content
 
 # defensive agent who collects gold and ist defensive against robbing
@@ -558,11 +572,16 @@ class DefensiveAgent(AIAgent):
         pass
 
     def radio(self):
-        # Share information about gold to cooperative agents
         content = []
-        if State.GOLD in self.perceptions:
-            content.append("inform")
-            content.append(f"Gold at {self.position}")
+        three_tuple = [[(1,2), (2,1), (3,2,9)], [(8,4), (3,1), (3,7,5)], [(3,7), (4,1), (4,7,5)]]
+        three_tuple_chosen = random.choice(three_tuple)
+        messages = ["",f"w({three_tuple_chosen[0][0]},{three_tuple_chosen[0][1]}) p({three_tuple_chosen[1][0]},{three_tuple_chosen[1][1]}) s({three_tuple_chosen[2][0]},{three_tuple_chosen[2][1]},{three_tuple_chosen[2][2]})"]
+        message_chosen = random.choice(messages)
+        if message_chosen == "":
+            return content
+        content.append("inform")
+        content.append(message_chosen)
+
         return content
 
     def action(self):

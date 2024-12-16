@@ -322,6 +322,8 @@ class AIAgent(Agent):
         if status == Plan.RANDOM:
             # self.print_knowledge() # for debugging, can be commented out
             safe_moves = self.select_safe_moves()
+            if not safe_moves:
+                return "up" # emergency case, when no move is safe
             next_move = random.choice(safe_moves)
         elif status == Plan.WAIT:
             next_move = None
@@ -493,12 +495,17 @@ class CooperativeAgent(AIAgent):
                     if State.SAFE not in self.knowledge[row][col]["state"]:
                         self.knowledge[row][col]["state"].append(State.PIT)
     
-    def action(self):
-        # Dig if gold is on the current field
-        if State.GOLD in self.perceptions:
-            if self.position in self.gold_positions:
-                self.gold_positions.remove(self.position)
-            return "dig"
+    # TODO: the agent picks up the gold automatically, action function is now only for shooting arrows
+    
+    # def action(self):
+    #     # Dig if gold is on the current field
+    #     if State.GOLD in self.perceptions:
+    #         if self.position in self.gold_positions:
+    #             self.gold_positions.remove(self.position)
+    #         return "dig"
+    #     return None
+    
+    def shoot(self):
         return None
 
     def meeting(self, agent):
@@ -575,10 +582,15 @@ class DefensiveAgent(AIAgent):
             content.append(f"Gold at {self.position}")
         return content
 
-    def action(self):
-        # Dig gold if present, otherwise no action
-        if State.GOLD in self.perceptions:
-            return "dig"
+    # TODO: the agent picks up the gold automatically, action function is now only for shooting arrows
+
+    # def action(self):
+    #     # Dig gold if present, otherwise no action
+    #     if State.GOLD in self.perceptions:
+    #         return "dig"
+    #     return None
+    
+    def shoot(self):
         return None
 
 class AggressiveAgent:

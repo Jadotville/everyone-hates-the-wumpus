@@ -194,6 +194,7 @@ class Game():
                 print("Gold: ", self.print_gold(agents))
                 print("Positions: ", self.print_positions(agents))
 
+        # final gold distribution
         gold = []
         for agent in agents:
             gold.append(agent.gold)
@@ -495,20 +496,6 @@ class Game():
             grid[agent.position[0]][agent.position[1]]["agents"].append(agent)
             self.spawn_perceptions(grid) # in case any wumpi got killed, removes their perceptions (alternatively do this specifically after killing a wumpus)
         
-        
-    def interactions(self, grid, agents):
-        reactions = {}
-        
-        for agent in agents:
-            
-            for other_agent in grid[agent.position[0]][agent.position[1]]["agents"]:
-                self.meeting(agent, other_agent)
-            
-            if grid[agent.position[0]][agent.position[1]]["state"] == State.GOLD:
-                reaction = agent.found_gold()
-                reactions[agent] = reaction
-    
-        self.gold_digging(reactions, grid)    
 
              
     def meeting(self, agent1, agent2, prints):
@@ -523,20 +510,36 @@ class Game():
         if action_agent1 == "rob":
             if action_agent2 == "rob":
                 agent1.meeting_result(agent2, "rob")                
-                agent1.gold -= 5
                 agent2.meeting_result(agent1, "rob")
-                agent2.gold -= 5
+                if agent1.gold > 5:
+                    agent1.gold -= 5
+                else:
+                    agent1.gold = 0
+                if agent2.gold > 5:
+                    agent2.gold -= 5
+                else:
+                    agent2.gold = 0
             else:
                 agent1.meeting_result(agent2, "nothing")
-                agent1.gold += 5
                 agent2.meeting_result(agent1, "rob") 
-                agent2.gold -= 8
+                if agent2.gold > 5:
+                    agent2.gold -= 5
+                    agent1.gold += 5
+                else:
+                    agent1.gold += agent2.gold
+                    agent2.gold = 0
         else:
             if action_agent2 == "rob":
                 agent1.meeting_result(agent2, "rob")
-                agent1.gold -= 8
                 agent2.meeting_result(agent1, "nothing")
-                agent2.gold += 5
+                if agent1.gold > 5:
+                    agent1.gold -= 5
+                    agent2.gold += 5
+                else:
+                    agent2.gold += agent1.gold
+                    agent1.gold = 0
             else:
                 agent1.meeting_result(agent2, "nothing")
-                agent2.meeting_result(agent1, "nothing")           
+                agent1.gold += 3
+                agent2.meeting_result(agent1, "nothing") 
+                agent2.gold += 3          

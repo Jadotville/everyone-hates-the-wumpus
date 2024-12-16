@@ -435,6 +435,7 @@ class CooperativeAgent(AIAgent):
         super().__init__(size)
         self.gold_positions = []  # List of known gold positions
         self.shared_knowledge = {}  # Stores messages received from other agents
+        self.last_meeting_results = {}  # Dictionary to store results
     
     def move(self):
         # Process received messages
@@ -481,12 +482,22 @@ class CooperativeAgent(AIAgent):
         return None
 
     def meeting(self, agent):
-        # Do nothing during meetings, could be extended
-        return "nothing"
+        """
+        Handles a meeting with another agent using the Tit for Tat strategy.
+        If the last interaction with the agent was cooperative, cooperate again.
+        If the last interaction was adversarial, retaliate by robbing.
+        """
+        # Get the last meeting result with the other agent, or default to 'cooperate' if none exists
+        result = self.last_meeting_results.get(agent.ID, "cooperate")  # Default to 'cooperate'
+
+        return result
 
     def meeting_result(self, other_agent, result):
-        # No specific reaction required
-        pass
+        """
+        Store the result of the meeting with another agent.
+        This allows the agent to decide the strategy in the next meeting.
+        """
+        self.last_meeting_results[other_agent.ID] = result
     
     def radio(self):
         # Share information about gold

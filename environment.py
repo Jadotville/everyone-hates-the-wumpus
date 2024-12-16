@@ -22,6 +22,7 @@ class Game():
             for i in range(len(agents)):
                 agents[i].ID = "p" + str(i + 1)
                 agents[i].gold = 0
+                agents[i].arrows = 1
                 self.radio_possible["p" + str(i+1)] = [0, ""]
 
         prints = game_properties["prints"]
@@ -116,6 +117,18 @@ class Game():
 
         max_number_of_moves = grid_properties["size"] * grid_properties["size"] * 3
 
+        for agent in agents:
+            purchase = agent.buy_arrows()
+            if purchase <= 0:
+                continue
+            
+            if agent.gold >= purchase * 2:
+                agent.arrows += purchase
+                agent.gold -= purchase * 2
+            else:
+                agent.arrows += agent.gold // 2
+                agent.gold -= (agent.gold // 2) * 2
+        
 
         #runs the game loop
         move_counter = 0

@@ -33,10 +33,10 @@ class Agent(ABC):
         pass   
      
     @abstractmethod
-    def action(self):
+    def shoot(self):
         """
-        - possible actions: shoot, dig
-        - agent moves only if everyone moves
+        - possible results: up, down, left, right, None
+        - shoots an arrow in a direction that flies one filed and kills the wumpus, if its there
         """
         pass
     
@@ -88,6 +88,17 @@ class Agent(ABC):
         '''
         pass
     
+    @abstractmethod
+    def buy_arrows(self):  
+        ''' every new rount the agent can buy arrows for 2 gold per each
+        if an agent has not enough gold for the amount of arrows he wants to buy, he buys as many as he can afford
+        
+        Returns:
+            0: the agent does not want to buy arrows
+            any positive number: the agent buys the number of arrows
+        '''  
+        pass
+    
 class PlayerAgent(Agent):
     """WIP: Agent that is controlled by the user."""
     
@@ -99,7 +110,7 @@ class PlayerAgent(Agent):
     def conversation(self):
         pass
     
-    def action(self):
+    def shoot(self):
         pass
     
     def meeting(self, agent):
@@ -292,7 +303,7 @@ class AIAgent(Agent):
             formatted_row = " ".join(f"{''.join(map(str, value)):{max_width}}" for value in row)
             print(formatted_row)
      
-    def action(self):
+    def shoot(self):
         pass
     
     def move(self):
@@ -347,8 +358,15 @@ class RightAgent(AIAgent):
         """Moves right only"""
         return "right"
     
-    def action(self):
-        pass
+    def buy_arrows(self):
+        return 100
+    
+    def shoot(self):
+        # print(self.perceptions)
+        if self.perceptions:
+            if Perception.SMELLY in self.perceptions:
+                return "up"
+        return None
     
     def conversation(self):
         pass
@@ -375,8 +393,11 @@ class RightAgent(AIAgent):
 class RandomAgent(AIAgent):
     """Agent that moves randomly."""
     
-    def action(self):
+    def shoot(self):
         pass
+    
+    def buy_arrows(self):
+        return 0
     
     def conversation(self):
         pass
@@ -405,7 +426,7 @@ class RandomBadAgent(AIAgent):
     - will always rob in meetings
     """
     
-    def action(self):
+    def shoot(self):
         pass
     
     def conversation(self):
@@ -587,7 +608,7 @@ class AggressiveAgent:
             self.target_agents.remove(other_agent.position)
         pass
     
-    def action(self):
+    def shoot(self):
         return None
     
     def radio(self):

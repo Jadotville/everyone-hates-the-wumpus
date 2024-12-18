@@ -7,19 +7,28 @@ if __name__ == '__main__':
     # ------ GAME SETTINGS ------
     
     grid_properties = {
-        "size": 7, # Grid size: must be odd
-        "num_pits": 0, # Pits: this should be pretty low
-        "num_s_wumpi": 0, # Smol wumpi: this should be pretty low
-        "num_l_wumpi": 0, # Large wumpi: this should be pretty low
-        "num_gold": 2, # Gold spawns
-        "num_armor": 2, # Armor spawns
-        "num_swords": 2, # Sword spawns
+        "size": 7,          # Grid size: must be odd
+        "num_pits": 0,      # Pits: this should be pretty low
+        "num_s_wumpi": 0,   # Smol wumpi: this should be pretty low
+        "num_l_wumpi": 0,   # Large wumpi: this should be pretty low
+        "num_small_gold": 2,# Gold spawns
+        "num_large_gold": 1,# Gold spawns
+        "num_armor": 2,     # Armor spawns
+        "num_swords": 2,    # Sword spawns
+        "small_gold": 5,    # Amount of gold for small gold
+        "large_gold": 10,   # Amount of gold for large gold
+        "arrow_price": 2,   # Price for arrows
+        "amount_arrows_start": 2, # Amount of arrows at the start
+        "meeting_rewards" : [[-5, 5], [-5, 3]], # Rewards for meeting another agent
+                                                #                     |  other player robs     other player does nothing 
+                                                #         player robs |
+                                                # player does nothing |
     }
     
     game_properties = {
-        "num_games": 100,
-        "prints": False, # display the game's state in the console
-        "plot": True, # plot the total amount of gold
+        "num_games": 1,   # number of games to simulate
+        "prints": True,    # display the game's state in the console
+        "plot": True,       # plot the evolution of total amount of gold per agent
     }
     
     

@@ -11,7 +11,8 @@ class State(Enum):
     PIT = "Pit"
     S_WUMPUS = "S_wumpus" # small wumpus
     L_WUMPUS = "L_wumpus" # large wumpus
-    GOLD = "gold" # if there's different amounts of gold, add more options
+    S_GOLD = "S_gold" # if there's different amounts of gold, add more options
+    L_GOLD = "L_gold"
     ARMOR = "armor"
     SWORD = 'sword'
     SAFE = '_' # only to be used for agents?

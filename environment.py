@@ -1,5 +1,5 @@
 import copy
-from enums import State, Perception, Gold_found, Status # for storing additional information in a grid's field
+from enums import State, Perception, Status # for storing additional information in a grid's field
 from random import randint, shuffle # for randomized world generation
 from utils import get_neighbors, append_unique, manhattan
 import matplotlib.pyplot as plt
@@ -22,7 +22,7 @@ class Game():
             for i in range(len(agents)):
                 agents[i].ID = "p" + str(i + 1)
                 agents[i].gold = 0
-                agents[i].arrows = 1
+                agents[i].arrows = grid_properties["amount_arrows_start"]
                 self.radio_possible["p" + str(i+1)] = [0, ""]
 
         prints = game_properties["prints"]
@@ -94,7 +94,7 @@ class Game():
                 living_agents = True
                 break
             
-        if num_wumpi - self.killed_wumpi <=0:
+        if num_wumpi != 0 and num_wumpi - self.killed_wumpi <=0:
             return True
         
         return not living_agents
@@ -126,8 +126,8 @@ class Game():
                 agent.arrows += purchase
                 agent.gold -= purchase * 2
             else:
-                agent.arrows += agent.gold // 2
-                agent.gold -= (agent.gold // 2) * 2
+                agent.arrows += agent.gold // grid_properties["arrow_price"]
+                agent.gold -= (agent.gold // grid_properties["arrow_price"]) * grid_properties["arrow_price"]
         
 
         #runs the game loop
@@ -200,15 +200,19 @@ class Game():
             
             
             # updates the agent positions on the grid
-            self.update_grid(grid, agents, shots, prints)
+            self.update_grid(grid, agents, shots, prints, grid_properties["meeting_rewards"])
 
             for agent in agents:
                 if agent.status == Status.dead:
                     continue
                 field = grid[agent.position[0]][agent.position[1]]
-                if field["state"] == State.GOLD:
+                if field["state"] == State.S_GOLD:
                     for every_agent in field["agents"]:
-                        every_agent.gold += 12//len(field["agents"])
+                        every_agent.gold += grid_properties["small_gold"]//len(field["agents"])
+                    field["state"] = None
+                elif field["state"] == State.L_GOLD:
+                    for every_agent in field["agents"]:
+                        every_agent.gold += grid_properties["large_gold"]//len(field["agents"])
                     field["state"] = None
 
             # radio
@@ -347,9 +351,10 @@ class Game():
         """
         # Extract properties for easier access
         size = grid_properties["size"]
-        num_gold = grid_properties["num_gold"]
         num_armor = grid_properties["num_armor"]
         num_swords = grid_properties['num_swords']
+        num_small_gold = grid_properties["num_small_gold"]
+        num_large_gold = grid_properties["num_large_gold"]
         agent_positions = []
         for agent in agents:
             agent_positions.append((agent.position[0], agent.position[1]))
@@ -363,14 +368,15 @@ class Game():
                 all_positions.remove((row,col))
                 
         # Total number of objects to place
-        total_objects = num_gold + num_armor + num_swords # + num_s_wumpi + num_l_wumpi
+        total_objects = num_small_gold + num_large_gold + num_armor + num_swords # + num_s_wumpi + num_l_wumpi
         
         # Shuffle positions and select a subset for object placement
         shuffle(all_positions)
         selected_positions = all_positions[:total_objects]
 
         # Create a list of objects to place
-        objects = ([State.GOLD] * num_gold + 
+        objects = ([State.S_GOLD] * num_small_gold + 
+                   [State.L_GOLD] * num_large_gold +
                    [State.ARMOR] * num_armor +
                    [State.SWORD] * num_swords)
         
@@ -502,15 +508,15 @@ class Game():
                 for n_row, n_col in get_neighbors(grid, row, col, consider_obstacles=False):
                     append_unique(grid[n_row][n_col]['perceptions'], perception)
         
-    def update_grid(self, grid, agents, shots, prints):
+    def update_grid(self, grid, agents, shots, prints, meeting_rewards):
         
         for pos in shots:
             if grid[pos[0]][pos[1]]["state"] == State.S_WUMPUS:
-                grid[pos[0]][pos[1]]["state"] = None
+                grid[pos[0]][pos[1]]["state"] = State.S_GOLD
                 self.killed_wumpi += 1
                 
             if grid[pos[0]][pos[1]]["state"] == State.L_WUMPUS and shots.count(pos) > 1:
-                grid[pos[0]][pos[1]]["state"] = None
+                grid[pos[0]][pos[1]]["state"] = State.L_GOLD
                 self.killed_wumpi += 1
             
         
@@ -542,14 +548,14 @@ class Game():
             # agent.perceptions = copy.deepcopy(grid[agent.position[0]][agent.position[1]]["perceptions"])
             # print("Game: Agent " + agent.ID + " should perceive " + agent.perceptions)
             for other_agent in grid[agent.position[0]][agent.position[1]]["agents"]:
-                self.meeting(agent, other_agent, prints)
+                self.meeting(agent, other_agent, prints, meeting_rewards)
 
             grid[agent.position[0]][agent.position[1]]["agents"].append(agent)
             self.spawn_perceptions(grid) # in case any wumpi got killed, removes their perceptions (alternatively do this specifically after killing a wumpus)
         
 
              
-    def meeting(self, agent1, agent2, prints):
+    def meeting(self, agent1, agent2, prints, rm):
         """
         - defines the result of a meeting between two agents
         """
@@ -562,20 +568,20 @@ class Game():
             if action_agent2 == "rob":
                 agent1.meeting_result(agent2, "rob")                
                 agent2.meeting_result(agent1, "rob")
-                if agent1.gold > 5:
-                    agent1.gold -= 5
+                if agent1.gold > abs(rm[0][0]):
+                    agent1.gold += rm[0][0]
                 else:
                     agent1.gold = 0
-                if agent2.gold > 5:
-                    agent2.gold -= 5
+                if agent2.gold > abs(rm[0][0]):
+                    agent2.gold += rm[0][0]
                 else:
                     agent2.gold = 0
             else:
                 agent1.meeting_result(agent2, "nothing")
                 agent2.meeting_result(agent1, "rob") 
-                if agent2.gold > 5:
-                    agent2.gold -= 5
-                    agent1.gold += 5
+                if agent2.gold > abs(rm[1][0]):
+                    agent2.gold += rm[1][0] 
+                    agent1.gold += rm[0][1]
                 else:
                     agent1.gold += agent2.gold
                     agent2.gold = 0
@@ -583,14 +589,14 @@ class Game():
             if action_agent2 == "rob":
                 agent1.meeting_result(agent2, "rob")
                 agent2.meeting_result(agent1, "nothing")
-                if agent1.gold > 5:
-                    agent1.gold -= 5
-                    agent2.gold += 5
+                if agent1.gold > abs(rm[1][0]):
+                    agent1.gold += rm[1][0] 
+                    agent2.gold += rm[0][1]
                 else:
                     agent2.gold += agent1.gold
                     agent1.gold = 0
             else:
                 agent1.meeting_result(agent2, "nothing")
-                agent1.gold += 3
+                agent1.gold += rm[1][1]
                 agent2.meeting_result(agent1, "nothing") 
-                agent2.gold += 3          
+                agent2.gold += rm[1][1]         

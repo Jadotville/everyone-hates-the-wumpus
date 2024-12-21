@@ -8,9 +8,9 @@ if __name__ == '__main__':
     
     grid_properties = {
         "size": 7,          # Grid size: must be odd
-        "num_pits": 0,      # Pits: this should be pretty low
-        "num_s_wumpi": 0,   # Smol wumpi: this should be pretty low
-        "num_l_wumpi": 0,   # Large wumpi: this should be pretty low
+        "num_pits": 2,      # Pits: this should be pretty low
+        "num_s_wumpi": 2,   # Smol wumpi: this should be pretty low
+        "num_l_wumpi": 1,   # Large wumpi: this should be pretty low
         "num_small_gold": 2,# Gold spawns
         "num_large_gold": 1,# Gold spawns
         "num_armor": 2,     # Armor spawns
@@ -46,17 +46,17 @@ if __name__ == '__main__':
     # ------ START SIMULATION ------
     
     # pass the following setup for a standart game
-    standart_agents = [
-        CooperativeAgent(size=size), 
-        RandomAgent(size=size), 
-        #RightAgent(size=size), 
-        DefensiveAgent(size = size),
-        RandomBadAgent(size=size)
-    ]  
+    # standart_agents = [
+    #     CooperativeAgent(size=size), 
+    #     RandomAgent(size=size), 
+    #     #RightAgent(size=size), 
+    #     DefensiveAgent(size = size),
+    #     RandomBadAgent(size=size)
+    # ]  
     
     # pass the following setup for experimenting
     testing_agents = [
-        RandomAgent(size=size, init_plan=testing_plan, debug=True, risk_aversion=0.95)
+        RandomAgent(size=size, debug=True, risk_aversion=0.95)
     ]
     
     # pass the following setup for random agents, they will always try to not step into pits/wumpi like an idiot
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         RandomAgent(size=size)
     ] 
     
-    game = Game(standart_agents, grid_properties, game_properties)
+    game = Game(testing_agents, grid_properties, game_properties)
     
 
 # TODO: implement armor and swords

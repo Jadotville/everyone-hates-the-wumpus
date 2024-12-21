@@ -21,7 +21,7 @@ def near_objects(pos, objects, dist=0):
 
 def get_neighbors(grid, row, col, consider_obstacles=False, return_format="coords", chance=1):
     """
-    UNTESTED: Returns a list of adjacent positions/direction-strings via Von Neumann neighborhood.
+    Returns a list of adjacent positions/direction-strings via Von Neumann neighborhood.
     
     :param bool consider_obstacles: option to also consider pits/wumpi as neighboors
     :param string return_format: option to configure return ("coords"->coordinates, "full"->coordinates and directions)
@@ -63,7 +63,7 @@ def get_neighbors(grid, row, col, consider_obstacles=False, return_format="coord
 
 def a_star_search(grid, start, goal):
     """
-    UNTESTED: Performs an A*-Search on a given agent's knowledge-grid. Uses Manhattan-distance to calculate the shortest path to a target position.
+    Performs an A*-Search on a given agent's knowledge-grid. Uses Manhattan-distance to calculate the shortest path to a target position.
     
     :param 2D-list grid: knowledge grid, will construct a path through fields with State.safe or None
     :param (int,int) start: starting position for the agent

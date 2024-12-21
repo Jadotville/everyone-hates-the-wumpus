@@ -2,9 +2,11 @@ from abc import ABC, abstractmethod
 from enums import State, Perception, Gold_found, Status, Plan
 from utils import get_neighbors, a_star_search, convert_to_direction, append_unique, list_difference
 from random import random
+from re import findall
 
 import random
 
+GUESS_PADDING = 5 # used for padding the length of a safe-assumed path to a large wumpus
 
 class Agent(ABC):
     
@@ -154,7 +156,8 @@ class AIAgent(Agent):
             self.plan = {
                 "status": Plan.RANDOM,
                 "patience": None, # optional int: agent follows a plan for a set number of actions, before resetting to "status": Plan.RANDOM
-                "target_pos": [] # optional [[int,int], ...]: when "status": Plan.GO_TO the agent should go to specified position
+                "target_pos": [], # optional [[int,int], ...]: when "status": Plan.GO_TO the agent should go to specified position
+                "shoot_pos": [] # optional [[int,int]]: upon reaching a target_pos, shoot these coordinates (requires convertion to direction)
             }
         
         # OLD-ver (no blocks): no knowledge on pits and wumpi locations, place State.x inside cordinates for assuming "x" is possibly on that field
@@ -219,6 +222,9 @@ class AIAgent(Agent):
             if self.debug:
                 print("Agent: INFO - Agent " + self.ID + " has reached goal " + str(self.position))
             self.plan["target_pos"].remove(self.position)
+            
+            if self.plan["status"] == Plan.GO_TO:
+                self.plan["status"] = Plan.WAIT
         
         # set target to a remaining unexplored field when exploring
         if self.plan["status"] == Plan.EXPLORE:
@@ -230,16 +236,25 @@ class AIAgent(Agent):
             ]
             if self.debug:
                 print("Agent: INFO - Agent " + self.ID + " has goals " + str(self.plan["target_pos"]))
-            
-        if not self.plan["target_pos"]:
-            self.reset_plan
+        
+        # ensure the plan is GO_TO, when target_pos is given
+        if self.plan["target_pos"] and self.plan["status"] == Plan.RANDOM:
+            self.plan["status"] == Plan.GO_TO
         
         # patience management
         if self.plan["patience"] == None:
-            return
+            
+            # ensure, agent cannot wait indefinetly without given patience
+            if self.plan["status"] == Plan.WAIT:
+                self.reset_plan()
+                return
+        
+        # reduce patience
         elif self.plan["patience"] > 0:
             self.plan["patience"] -= 1
-        elif self.plan["patience"] <= 0:
+        
+        # reset plan, upon not having goals or no patience
+        elif self.plan["patience"] <= 0 or not self.plan["target_pos"]:
             self.reset_plan()
     
     def reset_plan(self):
@@ -307,8 +322,56 @@ class AIAgent(Agent):
             formatted_row = " ".join(f"{''.join(map(str, value)):{max_width}}" for value in row)
             print(formatted_row)
      
+    def guess_wumpus(self) -> list:
+        """
+        Base logic for guessing large wumpi positions based on the knowledge grid. Returns a list of coordinates e.g. [(3,4), (0,5), ...]
+        """
+        return [
+                (row, col)
+                for row in range(len(self.knowledge))
+                for col in range(len(self.knowledge[row]))
+                if self.knowledge[row][col]["state"] == State.L_WUMPUS
+            ]
+           
+    def accept_message(self):
+        """
+        Process first message and update the agent's plan accordingly. Assumes, that each message is for informing a wumpus location in the following format: 'w(x,y) p(x,y) s(x,y,z)'
+        """
+        if not self.messages: 
+            return
+        
+        # parse the message string
+        pattern = r"(\w)\(([^)]+)\)"
+        matches = findall(pattern, self.messages)
+        parsed_data = {key: tuple(map(int, value.split(','))) for key, value in matches}
+        
+        w = parsed_data['w']
+        # p = parsed_data['p']
+        s = parsed_data['s']
+        
+        # set up the next plan
+        self.plan["status"] = Plan.GO_TO
+        self.plan["patience"] = s[2] # shoot wumpus after informed amount of moves, otherwise cancel plan
+        self.plan["target_pos"].append([s[0], s[1]]) # go to the senders shooting position
+        self.plan["shoot_pos"].append([w[0], w[1]]) # shoot at informed position
+        
+            
+            
+     
     def shoot(self):
-        pass
+        # shooting, if locations were calculated or informed via message   
+        wumpi = get_neighbors(self.knowledge, self.position[0], self.position[1], consider_obstacles=True, return_format="full")
+        wumpi = [
+            [row, col]
+            for row in range(len(wumpi))
+            for col in range(len(wumpi))
+            if [row, col] in self.plan["shoot_pos"]
+        ]
+        if not wumpi:
+            return None
+        
+        self.plan["shoot_pos"].remove(wumpi[0])
+        return convert_to_direction(self.position, wumpi[0])
     
     def move(self):
         """
@@ -354,7 +417,33 @@ class AIAgent(Agent):
         pass
 
     def radio(self):
-        pass
+        content = []
+        three_tuple = []
+        position = (self.position[0], self.position[1])
+        
+        # check out all large wumpi
+        wumpi = self.guess_wumpus()
+        shoot_info = [] # used for format (x,y,path_len)
+        for i in range(wumpi):
+            target = random.choice(get_neighbors(self.knowledge, wumpi[i][0], wumpi[i][1], consider_obstacles=True)) # safe field adjacent to wumpus, the sender aims to go to
+            path = a_star_search(self.knowledge, position, (target[0], target[1]))
+            shoot_info[i] = (target[0], target[1], len(path) + GUESS_PADDING)
+        
+        # create possible messages with wumpus locations and when the sender shoots
+        for i in range(len(wumpi)):
+            for x,y in wumpi:
+                three_tuple[i] = [(x,y), position, shoot_info[i]]
+        
+        # choose and send a random message, inform-performative-only
+        three_tuple_chosen = random.choice(three_tuple)
+        messages = ["",f"w({three_tuple_chosen[0][0]},{three_tuple_chosen[0][1]}) p({three_tuple_chosen[1][0]},{three_tuple_chosen[1][1]}) s({three_tuple_chosen[2][0]},{three_tuple_chosen[2][1]},{three_tuple_chosen[2][2]})"]
+        message_chosen = random.choice(messages)
+        if message_chosen == "":
+            return content
+        content.append("inform")
+        content.append(message_chosen)
+
+        return content
 
 
 class RightAgent(AIAgent):

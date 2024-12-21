@@ -148,6 +148,7 @@ class Game():
                     messages[key] = ''
                 else:
                     messages[key] = self.radio_possible[key][1][1]
+                    print("messages[key] = " + str(messages[key]))
 
             shots = []    
             

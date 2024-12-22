@@ -605,6 +605,19 @@ class Game():
         meeting_reward_pos_1 = get_meeting_reward_pos(action_agent1, action_agent2, agent1, agent2)
         meeting_reward_pos_2 = get_meeting_reward_pos(action_agent2, action_agent1, agent2, agent1)
 
+        if meeting_reward_pos_1[0] == 0:
+            agent1.meeting_result(agent2, "rob")
+            agent2.meeting_result(agent1, "rob")
+        if meeting_reward_pos_1[0] == 1:
+            agent1.meeting_result(agent2, "nothing")
+            agent2.meeting_result(agent1, "rob")
+        if meeting_reward_pos_1[0] == 2:
+            agent1.meeting_result(agent2, "rob")
+            agent2.meeting_result(agent1, "nothing")
+        if meeting_reward_pos_1[0] == 3:
+            agent1.meeting_result(agent2, "nothing")
+            agent2.meeting_result(agent1, "nothing")
+
         # decreasing or increasing the gold of the agents
         agent1.gold += rm[meeting_reward_pos_1[0]][meeting_reward_pos_1[1]][meeting_reward_pos_1[2]]
         agent2.gold += rm[meeting_reward_pos_2[0]][meeting_reward_pos_2[1]][meeting_reward_pos_2[2]]

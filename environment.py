@@ -573,6 +573,7 @@ class Game():
         action_agent1 = agent1.meeting(agent2)
         action_agent2 = agent2.meeting(agent1)
 
+        # function for returning list with indices for the reward matrix as specified in the simulation.py
         def get_meeting_reward_pos(action_agent1, action_agent2, agent1, agent2):
             meeting_reward_pos = []
             if action_agent1 == "rob":

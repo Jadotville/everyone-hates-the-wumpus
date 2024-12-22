@@ -1,4 +1,6 @@
 import copy
+
+import agent
 from enums import State, Perception, Status # for storing additional information in a grid's field
 from random import randint, shuffle # for randomized world generation
 from utils import get_neighbors, append_unique, manhattan
@@ -138,8 +140,10 @@ class Game():
         while not self.is_game_over(agents, num_wumpi) and max_number_of_moves > move_counter:            
             if prints:
                 print("\nMove: ", move_counter)
-            if prints:
                 print(self.radio_possible)
+                print("armor")
+                for agent in agents:
+                    print(agent.ID + " " + str(agent.armor))
 
             # get all message with player name
             messages = {}
@@ -148,7 +152,8 @@ class Game():
                     messages[key] = ''
                 else:
                     messages[key] = self.radio_possible[key][1][1]
-                    print("messages[key] = " + str(messages[key]))
+                    if prints:
+                        print(f"{messages[key]} = " + str(messages[key]))
 
             shots = []    
             
@@ -545,6 +550,9 @@ class Game():
             if grid[agent.position[0]][agent.position[1]]["state"] == State.L_WUMPUS:
                 agent.status = Status.dead
                 continue
+            if grid[agent.position[0]][agent.position[1]]["state"] == State.ARMOR:
+                agent.armor += 1
+                grid[agent.position[0]][agent.position[1]]["state"] = None
             
             # agent.perceptions = copy.deepcopy(grid[agent.position[0]][agent.position[1]]["perceptions"])
             # print("Game: Agent " + agent.ID + " should perceive " + agent.perceptions)
@@ -564,40 +572,48 @@ class Game():
             print("meeting: " + agent1.ID + " und " +agent2.ID)
         action_agent1 = agent1.meeting(agent2)
         action_agent2 = agent2.meeting(agent1)
-        # TODO: items
-        if action_agent1 == "rob":
-            if action_agent2 == "rob":
-                agent1.meeting_result(agent2, "rob")                
-                agent2.meeting_result(agent1, "rob")
-                if agent1.gold > abs(rm[0][0]):
-                    agent1.gold += rm[0][0]
+
+        def get_meeting_reward_pos(action_agent1, action_agent2, agent1, agent2):
+            meeting_reward_pos = []
+            if action_agent1 == "rob":
+                if action_agent2 == "rob":
+                    meeting_reward_pos.append(0)
                 else:
-                    agent1.gold = 0
-                if agent2.gold > abs(rm[0][0]):
-                    agent2.gold += rm[0][0]
-                else:
-                    agent2.gold = 0
+                    meeting_reward_pos.append(1)
             else:
-                agent1.meeting_result(agent2, "nothing")
-                agent2.meeting_result(agent1, "rob") 
-                if agent2.gold > abs(rm[1][0]):
-                    agent2.gold += rm[1][0] 
-                    agent1.gold += rm[0][1]
+                if action_agent2 == "rob":
+                    meeting_reward_pos.append(2)
                 else:
-                    agent1.gold += agent2.gold
-                    agent2.gold = 0
-        else:
-            if action_agent2 == "rob":
-                agent1.meeting_result(agent2, "rob")
-                agent2.meeting_result(agent1, "nothing")
-                if agent1.gold > abs(rm[1][0]):
-                    agent1.gold += rm[1][0] 
-                    agent2.gold += rm[0][1]
+                    meeting_reward_pos.append(3)
+
+            if agent1.armor > 0:
+                meeting_reward_pos.append(0)
+                if agent2.armor > 0:
+                    meeting_reward_pos.append(0)
                 else:
-                    agent2.gold += agent1.gold
-                    agent1.gold = 0
+                    meeting_reward_pos.append(1)
             else:
-                agent1.meeting_result(agent2, "nothing")
-                agent1.gold += rm[1][1]
-                agent2.meeting_result(agent1, "nothing") 
-                agent2.gold += rm[1][1]         
+                meeting_reward_pos.append(1)
+                if agent2.armor > 0:
+                    meeting_reward_pos.append(0)
+                else:
+                    meeting_reward_pos.append(1)
+            return meeting_reward_pos
+
+
+        meeting_reward_pos_1 = get_meeting_reward_pos(action_agent1, action_agent2, agent1, agent2)
+        meeting_reward_pos_2 = get_meeting_reward_pos(action_agent2, action_agent1, agent2, agent1)
+
+        # decreasing or increasing the gold of the agents
+        agent1.gold += rm[meeting_reward_pos_1[0]][meeting_reward_pos_1[1]][meeting_reward_pos_1[2]]
+        agent2.gold += rm[meeting_reward_pos_2[0]][meeting_reward_pos_2[1]][meeting_reward_pos_2[2]]
+
+        # decreasing the armor of the agents
+        if (meeting_reward_pos_1[0] == 0 or meeting_reward_pos_1[0] == 2) and agent1.armor > 0:
+            if prints:
+                print("looses armor " + agent1.ID)
+            agent1.armor -= 1
+        if (meeting_reward_pos_2[0] == 0 or meeting_reward_pos_2[0] == 2) and agent2.armor > 0:
+            if prints:
+                print("looses armor " + agent2.ID)
+            agent2.armor -= 1

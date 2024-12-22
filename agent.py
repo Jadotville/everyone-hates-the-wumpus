@@ -23,7 +23,7 @@ class Agent(ABC):
     gold = 0
     arrows = 0
     opinions = {}
-
+    armor = 0
     messages = {}
 
     @abstractmethod
@@ -316,11 +316,11 @@ class AIAgent(Agent):
                         p[row][col].append(s.value[0])
         
         # print the results with aliged grid
-        print("Knowledge base of Agent " + str(self.ID) + " :")
+    #    print("Knowledge base of Agent " + str(self.ID) + " :")
         max_width = max(len(str(value)) for row in p for value in row)
-        for row in p:
-            formatted_row = " ".join(f"{''.join(map(str, value)):{max_width}}" for value in row)
-            print(formatted_row)
+    #    for row in p:
+    #        formatted_row = " ".join(f"{''.join(map(str, value)):{max_width}}" for value in row)
+    #        print(formatted_row)
      
     def guess_wumpus(self) -> list:
         """
@@ -489,7 +489,6 @@ class RightAgent(AIAgent):
        
 class RandomAgent(AIAgent):
     """Agent that moves randomly."""
-    
     def shoot(self):
         pass
     
@@ -642,7 +641,6 @@ class CooperativeAgent(AIAgent):
 class DefensiveAgent(AIAgent):
     def __init__(self, size):
         super().__init__(size)
-        self.armor = 2  # Start with 2 pieces of armor to defend against robbing
         self.survival_mode = False  # Focus on collecting gold rather than evasion
 
     def move(self):

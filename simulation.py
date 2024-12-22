@@ -19,15 +19,21 @@ if __name__ == '__main__':
         "large_gold": 10,   # Amount of gold for large gold
         "arrow_price": 2,   # Price for arrows
         "amount_arrows_start": 2, # Amount of arrows at the start
-        "meeting_rewards" : [[-5, 5], [-5, 3]], # Rewards for meeting another agent
-                                                #                     |  other player robs     other player does nothing 
-                                                #         player robs |
-                                                # player does nothing |
-    }
+        "meeting_rewards" : [[[0,    5 ],       [0,     -5]],       [[0,        5],     [0,     5]],
+                             [[0,    0],        [-5,       -5]],    [[5,        5],     [5,     5]]], # Rewards for meeting another agent
+                                                #                     |  other player robs      other player does nothing
+                                                #         player robs |       [0]                     [1]
+                                                # player does nothing |       [2]                     [3]
+                                                # for each cell in upper grid:
+                                                #                     |  player has armor       player has no armor
+                                                #    player has armor |      [0][0]                  [0][1]
+                                                # player has no armor |      [1][0]                  [1][1]
+
+        }
     
     game_properties = {
         "num_games": 1,   # number of games to simulate
-        "prints": True,    # display the game's state in the console
+        "prints": False,    # display the game's state in the console
         "plot": True,       # plot the evolution of total amount of gold per agent
     }
     
@@ -56,7 +62,10 @@ if __name__ == '__main__':
     
     # pass the following setup for experimenting
     testing_agents = [
-        RandomAgent(size=size, debug=True, risk_aversion=0.95)
+        RandomAgent(size=size, debug=False, risk_aversion=0.95),
+        RandomAgent(size=size, debug=False, risk_aversion=0.95),
+        RandomAgent(size=size, debug=False, risk_aversion=0.95),
+        RandomAgent(size=size, debug=False, risk_aversion=0.95)
     ]
     
     # pass the following setup for random agents, they will always try to not step into pits/wumpi like an idiot

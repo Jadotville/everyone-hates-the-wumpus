@@ -1,6 +1,8 @@
 import heapq
 from enums import State
-from random import random
+from random import random, shuffle
+
+# these are utility functions, that can be freely used by other modules
 
 def manhattan(pos_a, pos_b):
     """Calculate manhattan distance between position a and b"""
@@ -61,13 +63,14 @@ def get_neighbors(grid, row, col, consider_obstacles=False, return_format="coord
 
     return neighbors
 
-def a_star_search(grid, start, goal):
+def a_star_search(grid, start, goal, chance=1):
     """
     Performs an A*-Search on a given agent's knowledge-grid. Uses Manhattan-distance to calculate the shortest path to a target position.
     
     :param 2D-list grid: knowledge grid, will construct a path through fields with State.safe or None
     :param (int,int) start: starting position for the agent
     :param (int,int) goal: target position for the agent (e.g. another agent's position to go to)
+    :param float chance: optional value between [0,1] to only have a chance of considering something an obstacle
     """
 
     if not goal:
@@ -85,7 +88,7 @@ def a_star_search(grid, start, goal):
         if current == goal:
             return reconstruct_path(came_from, current)
 
-        neighbors = get_neighbors(grid, current[0], current[1], consider_obstacles=True)
+        neighbors = get_neighbors(grid, current[0], current[1], consider_obstacles=True, chance=chance)
         
         for neighbor in neighbors:
             tentative_g_score = g_score[current] + 1
@@ -143,3 +146,18 @@ def append_unique(list, value, safe=False):
 def list_difference(list_a, list_b):
     """Returns a list of items exclusively in list_a."""
     return [item for item in list_a if item not in list_b]
+
+def derange(list):
+    """
+    Shuffles the elements of a list so that no item remains in its original position.
+    
+    :param list list: The input list to shuffle.
+    """
+    if len(list) < 2:
+        raise ValueError("utils: ERROR-List must have at least 2 elements to shuffle.")
+    
+    while True:
+        shuffled = list[:]
+        shuffle(shuffled)
+        if all(original != shuffled[idx] for idx, original in enumerate(list)):
+            return shuffled

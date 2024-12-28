@@ -33,7 +33,7 @@ if __name__ == '__main__':
     
     game_properties = {
         "num_games": 1,   # number of games to simulate
-        "prints": False,    # display the game's state in the console
+        "prints": True,    # display the game's state in the console
         "plot": True,       # plot the evolution of total amount of gold per agent
     }
     
@@ -62,10 +62,10 @@ if __name__ == '__main__':
     
     # pass the following setup for experimenting
     testing_agents = [
-        RandomAgent(size=size, debug=False, risk_aversion=0.95),
-        RandomAgent(size=size, debug=False, risk_aversion=0.95),
-        RandomAgent(size=size, debug=False, risk_aversion=0.95),
-        RandomAgent(size=size, debug=False, risk_aversion=0.95)
+        RandomAgent(size=size, debug=True),
+        RandomAgent(size=size, debug=True, risk_aversion=0.95),
+        RandomAgent(size=size, debug=True, risk_aversion=0.95),
+        RandomAgent(size=size, debug=True, risk_aversion=0.95)
     ]
     
     # pass the following setup for random agents, they will always try to not step into pits/wumpi like an idiot

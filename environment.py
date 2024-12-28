@@ -3,7 +3,7 @@ import copy
 import agent
 from enums import State, Perception, Status # for storing additional information in a grid's field
 from random import randint, shuffle # for randomized world generation
-from utils import get_neighbors, append_unique, manhattan
+from utils import get_neighbors, append_unique, manhattan, derange
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -157,6 +157,8 @@ class Game():
 
             shots = []    
             
+            # makes sure, every agent recieves a randomized message from someone else
+            random_message_keys = derange(list(messages.keys()))
             
             for agent in agents:
                 try:
@@ -168,7 +170,8 @@ class Game():
                 # agent perceives and then moves
                 agent.perceptions = copy.copy(grid[agent.position[0]][agent.position[1]]["perceptions"])
                 
-                agent.messages = messages         
+                agent.messages = messages[random_message_keys[0]]
+                random_message_keys.pop(0)
                     
              
             for agent in agents:
@@ -190,7 +193,6 @@ class Game():
           
             for agent in agents:
                 
-                # print("Game: Agent " + agent.ID + " should perceive " + str(agent.perceptions))
                 move=agent.move()
                 
                 if move== "up":

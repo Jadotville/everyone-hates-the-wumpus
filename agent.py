@@ -172,6 +172,11 @@ class AIAgent(Agent):
         self.risk_aversion = risk_aversion
 
     def select_safe_moves(self):
+        """
+        Returns a list of moves, which are within bounds and considered safe regarding the agent's knowledge. 
+        - If no move is safe, it chooses a random in-bounds move instead
+        - Considers the agent's risk-aversion, to potentially take risks
+        """
         is_move_safe = {
             "up": True, 
             "down": True, 
@@ -261,7 +266,7 @@ class AIAgent(Agent):
         """Sets the AI-agent's plan back to randomly moving"""
         self.plan["patience"] = None
         self.plan["status"] = Plan.RANDOM
-        self.plan["target_pos"] = None
+        self.plan["target_pos"] = []
     
     def update_knowledge(self):
         """UNTESTED: Updates the agent's knowledge base on pit/wumpus locations. Should be called every turn"""
@@ -301,8 +306,8 @@ class AIAgent(Agent):
                     self.knowledge[row][col]["state"].remove(assumptions[perception])
         
         
-        if self.debug:
-            self.print_knowledge()
+        # if self.debug:
+        #     self.print_knowledge()
            
     def print_knowledge(self):
         """Prints the agents knowledge-grid with safe/pit/wumpus assumptions. Can be used for debugging."""
@@ -316,11 +321,11 @@ class AIAgent(Agent):
                         p[row][col].append(s.value[0])
         
         # print the results with aliged grid
-    #    print("Knowledge base of Agent " + str(self.ID) + " :")
+        print("Knowledge base of Agent " + str(self.ID) + " :")
         max_width = max(len(str(value)) for row in p for value in row)
-    #    for row in p:
-    #        formatted_row = " ".join(f"{''.join(map(str, value)):{max_width}}" for value in row)
-    #        print(formatted_row)
+        for row in p:
+           formatted_row = " ".join(f"{''.join(map(str, value)):{max_width}}" for value in row)
+           print(formatted_row)
      
     def guess_wumpus(self) -> list:
         """
@@ -329,20 +334,34 @@ class AIAgent(Agent):
         return [
                 (row, col)
                 for row in range(len(self.knowledge))
-                for col in range(len(self.knowledge[row]))
-                if self.knowledge[row][col]["state"] == State.L_WUMPUS
+                for col in range(len(self.knowledge))
+                if State.L_WUMPUS in self.knowledge[row][col]["state"]
             ]
            
     def accept_message(self):
         """
-        Process first message and update the agent's plan accordingly. Assumes, that each message is for informing a wumpus location in the following format: 'w(x,y) p(x,y) s(x,y,z)'
+        Processes a message and updates the agent's plan accordingly. Assumes, that each message is for informing a wumpus location in the following format: 'w(x,y) p(x,y) s(x,y,z)'
+        - currently only works with a single message provided by the environment, so it cannot choose a specific message itself
         """
-        if not self.messages: 
+        # choose random message from another agent, if nothing to do and arrows available
+        # self.messages.pop(self.ID)
+        if (not self.messages
+            or not self.plan["status"] == Plan.RANDOM
+            or self.arrows <= 0 ): 
             return
+        # chosen_message = random.choice([message for message in self.messages.values() if message])
+        
+        # input string for testing
+        # input_string = "w(1,2) p(3,4) s(1,2,3)"
+        if self.debug:
+            print("Agent-" + str(self.ID) + ": Trying to accept a random message " + str(self.messages))
         
         # parse the message string
         pattern = r"(\w)\(([^)]+)\)"
         matches = findall(pattern, self.messages)
+        
+        
+        # matches = findall(pattern, input_string)
         parsed_data = {key: tuple(map(int, value.split(','))) for key, value in matches}
         
         w = parsed_data['w']
@@ -355,6 +374,8 @@ class AIAgent(Agent):
         self.plan["target_pos"].append([s[0], s[1]]) # go to the senders shooting position
         self.plan["shoot_pos"].append([w[0], w[1]]) # shoot at informed position
         
+        if self.debug:
+            print("Agent-" + str(self.ID) + ": Successfully acknowledged a message and updated its plan to killing a wumpus at " + str(([w[0], w[1]])))
             
             
      
@@ -370,6 +391,15 @@ class AIAgent(Agent):
         if not wumpi:
             return None
         
+        # assume, agent may have killed a wumpus and made it safe
+        if State.S_WUMPUS in self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"]:
+            self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"].remove(State.S_WUMPUS)
+            append_unique(self.knowledge[wumpi[0][0]][wumpi[0][1]]["blocks"], State.S_WUMPUS)
+        if State.L_WUMPUS in self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"]: # potentially unsafe
+            self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"].remove(State.L_WUMPUS)
+            append_unique(self.knowledge[wumpi[0][0]][wumpi[0][1]]["blocks"], State.L_WUMPUS)
+        append_unique(self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"], State.SAFE)
+        
         self.plan["shoot_pos"].remove(wumpi[0])
         return convert_to_direction(self.position, wumpi[0])
     
@@ -383,21 +413,28 @@ class AIAgent(Agent):
         This was tested, so use this as a base for other agents.
         """
         # update first, to prevent errors, e.g. trying to go to a field you already arrived at
+        self.accept_message() # potentially accept a message to kill wumpi
         self.update_knowledge()
         self.update_plan()
         status = self.plan["status"]
+        
+        # random exploring
         if status == Plan.RANDOM:
             # self.print_knowledge() # for debugging, can be commented out
             safe_moves = self.select_safe_moves()
-            if not safe_moves:
-                return "up" # emergency case, when no move is safe
+            # if not safe_moves:
+            #     return "up" # emergency case, when no move is safe (Note: should already be handled by select_safe_moves())
             next_move = random.choice(safe_moves)
+        
+        # stand still
         elif status == Plan.WAIT:
             next_move = None
+        
+        # go to a specific field or unexplored territory
         elif status == Plan.GO_TO or status == Plan.EXPLORE:
-            # self.print_knowledge() # for debugging, can be commented out
-            path = a_star_search(self.knowledge, (self.position[0], self.position[1]), (self.plan["target_pos"][0][0],self.plan["target_pos"][1][1]))
-            
+            path = a_star_search(self.knowledge, (self.position[0], self.position[1]), (self.plan["target_pos"][0][0],self.plan["target_pos"][0][1]), chance=self.risk_aversion)
+            if self.debug:
+                print("Agent-" + str(self.ID) + ": Calculated a path to goal " + str(path))
             # go back to exploring, if no path available, otherwise proceed
             if path is None:
                 safe_moves = self.select_safe_moves()
@@ -423,16 +460,22 @@ class AIAgent(Agent):
         
         # check out all large wumpi
         wumpi = self.guess_wumpus()
+        if self.debug:
+            print("Agent-" + str(self.ID) + ": Guessed large wumpi at " + str(wumpi))
+        
+        if not wumpi:
+            return []
+        
         shoot_info = [] # used for format (x,y,path_len)
-        for i in range(wumpi):
+        for i in range(len(wumpi)):
             target = random.choice(get_neighbors(self.knowledge, wumpi[i][0], wumpi[i][1], consider_obstacles=True)) # safe field adjacent to wumpus, the sender aims to go to
-            path = a_star_search(self.knowledge, position, (target[0], target[1]))
-            shoot_info[i] = (target[0], target[1], len(path) + GUESS_PADDING)
+            path = a_star_search(self.knowledge, position, (target[0], target[1]), chance=self.risk_aversion)
+            shoot_info.append((target[0], target[1], len(path) + GUESS_PADDING if path else GUESS_PADDING))
         
         # create possible messages with wumpus locations and when the sender shoots
         for i in range(len(wumpi)):
             for x,y in wumpi:
-                three_tuple[i] = [(x,y), position, shoot_info[i]]
+                three_tuple.append([(x,y), position, shoot_info[i]])
         
         # choose and send a random message, inform-performative-only
         three_tuple_chosen = random.choice(three_tuple)
@@ -505,18 +548,19 @@ class RandomAgent(AIAgent):
     def meeting_result(self, other_agent, result):
         pass
 
-    def radio(self):
-        content = []
-        three_tuple = [[(1,2), (2,1), (3,2,9)], [(8,4), (3,1), (3,7,5)], [(3,7), (4,1), (4,7,5)]]
-        three_tuple_chosen = random.choice(three_tuple)
-        messages = ["",f"w({three_tuple_chosen[0][0]},{three_tuple_chosen[0][1]}) p({three_tuple_chosen[1][0]},{three_tuple_chosen[1][1]}) s({three_tuple_chosen[2][0]},{three_tuple_chosen[2][1]},{three_tuple_chosen[2][2]})"]
-        message_chosen = random.choice(messages)
-        if message_chosen == "":
-            return content
-        content.append("inform")
-        content.append(message_chosen)
+    # def radio(self):
+    #     content = []
+    #     three_tuple = [[(1,2), (2,1), (3,2,9)], [(8,4), (3,1), (3,7,5)], [(3,7), (4,1), (4,7,5)]]
+    #     three_tuple_chosen = random.choice(three_tuple)
+    #     messages = ["",f"w({three_tuple_chosen[0][0]},{three_tuple_chosen[0][1]}) p({three_tuple_chosen[1][0]},{three_tuple_chosen[1][1]}) s({three_tuple_chosen[2][0]},{three_tuple_chosen[2][1]},{three_tuple_chosen[2][2]})"]
+    #     message_chosen = random.choice(messages)
+    #     if message_chosen == "":
+    #         return content
+    #     content.append("inform")
+    #     content.append(message_chosen)
 
-        return content
+    #     return content
+
 class RandomBadAgent(AIAgent):
     """
     Agent that moves randomly.

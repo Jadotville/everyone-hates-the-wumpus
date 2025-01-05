@@ -62,10 +62,10 @@ if __name__ == '__main__':
     
     # pass the following setup for experimenting
     testing_agents = [
-        RandomAgent(size=size, debug=True),
-        RandomAgent(size=size, debug=True, risk_aversion=0.95),
-        RandomAgent(size=size, debug=True, risk_aversion=0.95),
-        RandomAgent(size=size, debug=True, risk_aversion=0.95)
+        RandomAgent(size=size),
+        CooperativeAgent(size=size),
+        CooperativeAgent(size=size),
+        CooperativeAgent(size=size)
     ]
     
     # pass the following setup for random agents, they will always try to not step into pits/wumpi like an idiot

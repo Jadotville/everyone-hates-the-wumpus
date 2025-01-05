@@ -601,41 +601,13 @@ class CooperativeAgent(AIAgent):
         self.shared_knowledge = {}  # Stores messages received from other agents
         self.last_meeting_results = {}  # Dictionary to store results
     
-    def move(self):
-        # Process received messages
-        for key, message in self.messages.items():
-            if "Gold at" in message:
-                gold_pos = eval(message.split("at")[1])  # Extract the position
-                if gold_pos not in self.gold_positions:
-                    self.gold_positions.append(gold_pos)
+    def buy_arrows(self):
+        return 0
+    def conversation(self):
+        pass
         
-        # If gold is known, plan to move there
-        if self.gold_positions:
-            target = self.gold_positions[0]  # Go to the first known gold position
-            self.plan = {"status": Plan.GO_TO, "target_pos": target}
-            path = a_star_search(self.knowledge, tuple(self.position), target)
-            if path:
-                return path[0]  # Follow the first step in the path
-            else:
-                self.gold_positions.pop(0)  # Remove inaccessible gold
-        
-        # Default behavior: Continue exploring
-        self.plan["status"] = Plan.RANDOM
-        safe_moves = self.select_safe_moves()
-        return random.choice(safe_moves) if safe_moves else None
-    
-    def update_knowledge(self):
-        # Update knowledge based on perceptions
-        if not self.perceptions:
-            neighbors = get_neighbors(self.knowledge, self.position[0], self.position[1])
-            for row, col in neighbors:
-                self.knowledge[row][col]["state"].append(State.SAFE)
-        for perception in self.perceptions:
-            if perception == Perception.BREEZE:
-                neighbors = get_neighbors(self.knowledge, self.position[0], self.position[1])
-                for row, col in neighbors:
-                    if State.SAFE not in self.knowledge[row][col]["state"]:
-                        self.knowledge[row][col]["state"].append(State.PIT)
+    def shoot(self):
+        pass
     
     # TODO: the agent picks up the gold automatically, action function is now only for shooting arrows
     
@@ -668,18 +640,18 @@ class CooperativeAgent(AIAgent):
         """
         self.last_meeting_results[other_agent.ID] = result
     
-    def radio(self):
-        content = []
-        three_tuple = [[(1,2), (2,1), (3,2,9)], [(8,4), (3,1), (3,7,5)], [(3,7), (4,1), (4,7,5)]]
-        three_tuple_chosen = random.choice(three_tuple)
-        messages = ["",f"w({three_tuple_chosen[0][0]},{three_tuple_chosen[0][1]}) p({three_tuple_chosen[1][0]},{three_tuple_chosen[1][1]}) s({three_tuple_chosen[2][0]},{three_tuple_chosen[2][1]},{three_tuple_chosen[2][2]})"]
-        message_chosen = random.choice(messages)
-        if message_chosen == "":
-            return content
-        content.append("inform")
-        content.append(message_chosen)
+    # def radio(self):
+    #     content = []
+    #     three_tuple = [[(1,2), (2,1), (3,2,9)], [(8,4), (3,1), (3,7,5)], [(3,7), (4,1), (4,7,5)]]
+    #     three_tuple_chosen = random.choice(three_tuple)
+    #     messages = ["",f"w({three_tuple_chosen[0][0]},{three_tuple_chosen[0][1]}) p({three_tuple_chosen[1][0]},{three_tuple_chosen[1][1]}) s({three_tuple_chosen[2][0]},{three_tuple_chosen[2][1]},{three_tuple_chosen[2][2]})"]
+    #     message_chosen = random.choice(messages)
+    #     if message_chosen == "":
+    #         return content
+    #     content.append("inform")
+    #     content.append(message_chosen)
 
-        return content
+    #     return content
 
 # defensive agent who collects gold and ist defensive against robbing
 class DefensiveAgent(AIAgent):
@@ -787,6 +759,5 @@ class AggressiveAgent:
     def radio(self):
         return []
 
-# TODO
-# explorative Agent
+
 

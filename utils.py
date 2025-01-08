@@ -116,7 +116,7 @@ def convert_to_direction(pos_a, pos_b):
     - "up"/"down"/"left"/"right"
     """
     if manhattan(pos_a, pos_b) != 1:
-        print("utils: ERROR-couldn't convert " + pos_b + "-" + pos_a + " into a direction.")
+        print("utils: ERROR-couldn't convert " + str(pos_b) + "-" + str(pos_a) + " into a direction.")
         return None
     
     convert = {

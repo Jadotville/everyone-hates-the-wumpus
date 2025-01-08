@@ -8,7 +8,7 @@ if __name__ == '__main__':
     
     grid_properties = {
         "size": 7,          # Grid size: must be odd
-        "num_pits": 2,      # Pits: this should be pretty low
+        "num_pits": 1,      # Pits: this should be pretty low
         "num_s_wumpi": 2,   # Smol wumpi: this should be pretty low
         "num_l_wumpi": 1,   # Large wumpi: this should be pretty low
         "num_small_gold": 2,# Gold spawns
@@ -62,10 +62,10 @@ if __name__ == '__main__':
     
     # pass the following setup for experimenting
     testing_agents = [
-        RandomAgent(size=size),
-        CooperativeAgent(size=size),
-        CooperativeAgent(size=size),
-        CooperativeAgent(size=size)
+        RandomAgent(size=size, debug=True),
+        RandomAgent(size=size, risk_aversion=0.95), 
+        RandomAgent(size=size, risk_aversion=0.95), 
+        RandomAgent(size=size, risk_aversion=0.95)
     ]
     
     # pass the following setup for random agents, they will always try to not step into pits/wumpi like an idiot

@@ -7,6 +7,7 @@ from utils import get_neighbors, append_unique, manhattan, derange
 import matplotlib.pyplot as plt
 import numpy as np
 
+MOVES_SCALAR = 3 # scales the maximum number of moves per game
 
 class Game():
     ''' p1 : [n, message] => in n moves the player can make a radio again, when message != "" -> the player made this radio last move ''' # TODO Maybe saving all radio calls
@@ -22,7 +23,6 @@ class Game():
             raise ValueError("No agents provided")
         else:
             for i in range(len(agents)):
-                agents[i].ID = "p" + str(i + 1)
                 agents[i].gold = 0
                 agents[i].arrows = grid_properties["amount_arrows_start"]
                 self.radio_possible["p" + str(i+1)] = [0, ""]
@@ -117,7 +117,7 @@ class Game():
             self.print_grid(grid)
 
 
-        max_number_of_moves = grid_properties["size"] * grid_properties["size"] * 3
+        max_number_of_moves = int(grid_properties["size"] * grid_properties["size"] * MOVES_SCALAR)
 
         for agent in agents:
             purchase = agent.buy_arrows()

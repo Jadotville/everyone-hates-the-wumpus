@@ -23,6 +23,7 @@ class Game():
             raise ValueError("No agents provided")
         else:
             for i in range(len(agents)):
+                agents[i].ID = "p" + str(i + 1)
                 agents[i].gold = 0
                 agents[i].arrows = grid_properties["amount_arrows_start"]
                 self.radio_possible["p" + str(i+1)] = [0, ""]

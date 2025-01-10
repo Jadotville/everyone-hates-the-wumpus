@@ -637,7 +637,8 @@ class RandomBadAgent(AIAgent):
     Agent that moves randomly.
     - will always rob in meetings
     """
-    
+    def buy_arrows(self):
+        return 0
     def shoot(self):
         pass
     
@@ -668,8 +669,6 @@ class CooperativeAgent(AIAgent):
     
     def __init__(self, size):
         super().__init__(size)
-        self.gold_positions = []  # List of known gold positions
-        self.shared_knowledge = {}  # Stores messages received from other agents
         self.last_meeting_results = {}  # Dictionary to store results
     
     def buy_arrows(self):
@@ -679,19 +678,6 @@ class CooperativeAgent(AIAgent):
         
     def shoot(self):
         pass
-    
-    # TODO: the agent picks up the gold automatically, action function is now only for shooting arrows
-    
-    # def action(self):
-    #     # Dig if gold is on the current field
-    #     if State.GOLD in self.perceptions:
-    #         if self.position in self.gold_positions:
-    #             self.gold_positions.remove(self.position)
-    #         return "dig"
-    #     return None
-    
-    def shoot(self):
-        return None
 
     def meeting(self, agent):
         """
@@ -710,92 +696,27 @@ class CooperativeAgent(AIAgent):
         This allows the agent to decide the strategy in the next meeting.
         """
         self.last_meeting_results[other_agent.ID] = result
-    
-    # def radio(self):
-    #     content = []
-    #     three_tuple = [[(1,2), (2,1), (3,2,9)], [(8,4), (3,1), (3,7,5)], [(3,7), (4,1), (4,7,5)]]
-    #     three_tuple_chosen = random.choice(three_tuple)
-    #     messages = ["",f"w({three_tuple_chosen[0][0]},{three_tuple_chosen[0][1]}) p({three_tuple_chosen[1][0]},{three_tuple_chosen[1][1]}) s({three_tuple_chosen[2][0]},{three_tuple_chosen[2][1]},{three_tuple_chosen[2][2]})"]
-    #     message_chosen = random.choice(messages)
-    #     if message_chosen == "":
-    #         return content
-    #     content.append("inform")
-    #     content.append(message_chosen)
-
-    #     return content
 
 # defensive agent who collects gold and ist defensive against robbing
 class DefensiveAgent(AIAgent):
-    def __init__(self, size):
-        super().__init__(size)
-        self.survival_mode = False  # Focus on collecting gold rather than evasion
-
-    def move(self):
-        # Prioritize gold collection if gold is perceived
-        if State.L_GOLD in self.perceptions:
-            return "dig"
-        
-        # Use A* to navigate to known gold positions if available
-        for row in range(self.grid_size):
-            for col in range(self.grid_size):
-                if State.L_GOLD in self.knowledge[row][col]["state"]:
-                    path = a_star_search(self.knowledge, tuple(self.position), (row, col))
-                    if path:
-                        return path[0]
-        
-        # Default: Explore safely
-        safe_moves = self.select_safe_moves()
-        return random.choice(safe_moves) if safe_moves else None
-
-    def update_knowledge(self):
-        # Update knowledge based on perceptions
-        neighbors = get_neighbors(self.knowledge, self.position[0], self.position[1])
-        if not self.perceptions:
-            for row, col in neighbors:
-                self.knowledge[row][col]["state"] = [State.SAFE]
-        for perception in self.perceptions:
-            if perception == Perception.BREEZE:
-                for row, col in neighbors:
-                    if State.SAFE not in self.knowledge[row][col]["state"]:
-                        self.knowledge[row][col]["state"].append(State.PIT)
 
     def meeting(self, agent):
         # Defensive behavior in meetings
-        if isinstance(agent, RandomBadAgent):
-            if self.armor > 0:
-                return "nothing"  # Use armor to block robbing
-            else:
-                return "rob"  # Attempt to rob back if no armor is left
-
-        # Neutral behavior with cooperative agents
-        return "nothing"
-
+        if self.armor > 0:
+            return "nothing"  # Use armor to block robbing
+        else:
+            return "rob"  # Attempt to rob back if no armor is left
+        
     def meeting_result(self, other_agent, result):
         pass
-
-    def radio(self):
-        content = []
-        three_tuple = [[(1,2), (2,1), (3,2,9)], [(8,4), (3,1), (3,7,5)], [(3,7), (4,1), (4,7,5)]]
-        three_tuple_chosen = random.choice(three_tuple)
-        messages = ["",f"w({three_tuple_chosen[0][0]},{three_tuple_chosen[0][1]}) p({three_tuple_chosen[1][0]},{three_tuple_chosen[1][1]}) s({three_tuple_chosen[2][0]},{three_tuple_chosen[2][1]},{three_tuple_chosen[2][2]})"]
-        message_chosen = random.choice(messages)
-        if message_chosen == "":
-            return content
-        content.append("inform")
-        content.append(message_chosen)
-
-        return content
-
-    # TODO: the agent picks up the gold automatically, action function is now only for shooting arrows
-
-    # def action(self):
-    #     # Dig gold if present, otherwise no action
-    #     if State.GOLD in self.perceptions:
-    #         return "dig"
-    #     return None
     
     def shoot(self):
         return None
+
+    def buy_arrows(self):
+        return 0
+    def conversation(self):
+        pass
 
 class AggressiveAgent:
     def move(self):

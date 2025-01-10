@@ -6,7 +6,9 @@ from re import findall
 
 import random
 
-GUESS_PADDING = 15 # used for padding the length of a safe-assumed path to a large wumpus
+GUESS_PADDING = 10 # used for padding the length of a safe-assumed path to a large wumpus
+MAX_ARROWS = 3 # inventory space for arrows
+ARROW_PRICE = 2 # from grid_properties in simulation.py
 
 class Agent(ABC):
     
@@ -21,7 +23,7 @@ class Agent(ABC):
     perceptions = None
 
     gold = 0
-    arrows = 1
+    arrows = 2 # normally start with 1 instead
     opinions = {}
     armor = 0
     messages = {}
@@ -305,9 +307,6 @@ class AIAgent(Agent):
                         print("Agent-" + str(self.ID) + ": Removing assumption " + str(assumptions[perception]) + " at location " + str((row,col)))
                     self.knowledge[row][col]["state"].remove(assumptions[perception])
         
-        
-        if self.debug:
-            self.print_knowledge()
            
     def print_knowledge(self):
         """Prints the agents knowledge-grid with safe/pit/wumpus assumptions. Can be used for debugging."""
@@ -372,7 +371,7 @@ class AIAgent(Agent):
         self.plan["status"] = Plan.GO_TO
         self.plan["patience"] = s[2] # shoot wumpus after informed amount of moves, otherwise cancel plan
         self.plan["target_pos"].append([s[0], s[1]]) # go to the senders shooting position
-        self.plan["shoot_pos"].append([w[0], w[1]]) # shoot at informed position
+        self.plan["shoot_pos"].append((w[0], w[1])) # shoot at informed position
         
         if self.debug:
             print("Agent-" + str(self.ID) + ": Successfully acknowledged a message and updated its plan to killing a wumpus at " + str(([w[0], w[1]])))
@@ -380,21 +379,23 @@ class AIAgent(Agent):
             
      
     def shoot(self):
+        if self.debug:
+            print(f"Agent-{self.ID}: Has targets {self.plan["shoot_pos"]}")
         # shooting, if locations were calculated or informed via message (small wumpi work aswell) 
         if (self.arrows <= 0
-            or self.plan["patience"] and self.plan["patience"] > 1):
+            or self.plan["patience"] and self.plan["patience"] > 0):
             return None
         
-        if self.debug:
-            print("Agent-" + str(self.ID) + ": Has enough arrows, position at " + str(self.position))
+        # if self.debug:
+        #     print("Agent-" + str(self.ID) + ": Has enough arrows, position at " + str(self.position))
             
         wumpi = get_neighbors(self.knowledge, self.position[0], self.position[1], consider_obstacles=False)
-        if self.debug:
-            print("Agent-" + str(self.ID) + ": Neighbors at " + str(wumpi))
+        # if self.debug:
+        #     print("Agent-" + str(self.ID) + ": Neighbors at " + str(wumpi))
         wumpi = [
             (wumpus[0], wumpus[1])
             for wumpus in wumpi
-            if [wumpus[0], wumpus[1]] in self.plan["shoot_pos"] or self.knowledge[wumpus[0]][wumpus[1]]["state"] == [State.S_WUMPUS]
+            if (wumpus[0], wumpus[1]) in self.plan["shoot_pos"] or self.knowledge[wumpus[0]][wumpus[1]]["state"] == [State.S_WUMPUS]
         ]
         if not wumpi:
             return None
@@ -406,10 +407,20 @@ class AIAgent(Agent):
         if State.S_WUMPUS in self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"]:
             self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"].remove(State.S_WUMPUS)
             append_unique(self.knowledge[wumpi[0][0]][wumpi[0][1]]["blocks"], State.S_WUMPUS)
-        append_unique(self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"], State.SAFE)
+        # if there are no assumptions anymore, claim safety
+        if not self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"]:
+            append_unique(self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"], State.SAFE)
         
+        # plan to go to the shot position and collect gold
+        # append_unique((self.plan["target_pos"]), wumpi[0])
+        
+        # update wumpi guesses and return shot direction
         if wumpi[0] in self.plan["shoot_pos"]:
             self.plan["shoot_pos"].remove(wumpi[0])
+            self.reset_wumpi_guess()
+            if self.debug:
+                print(f"Agent-{self.ID}: Updated targets {self.plan["shoot_pos"]}")
+                self.print_knowledge()
         direction = convert_to_direction(self.position, wumpi[0])
         if self.debug:
             print("Agent-" + str(self.ID) + ": Shot an arrow in direction " + direction + " at " + str(wumpi[0]))
@@ -430,9 +441,11 @@ class AIAgent(Agent):
         self.update_plan()
         status = self.plan["status"]
         
+        if self.debug:
+            self.print_knowledge()
+        
         # random exploring
         if status == Plan.RANDOM:
-            # self.print_knowledge() # for debugging, can be commented out
             safe_moves = self.select_safe_moves()
             # if not safe_moves:
             #     return "up" # emergency case, when no move is safe (Note: should already be handled by select_safe_moves())
@@ -467,7 +480,8 @@ class AIAgent(Agent):
 
     def radio(self):
         # don't send messages, when you've already planned something
-        if not self.plan["status"] == Plan.RANDOM:
+        if (not self.plan["status"] == Plan.RANDOM
+            or random.randint(1, 10) >= 9): # regulate amount of messages for less overlapping
             return []
         
         content = []
@@ -506,13 +520,50 @@ class AIAgent(Agent):
         self.plan["status"] = Plan.GO_TO
         self.plan["patience"] = three_tuple_chosen[2][2] # shoot wumpus after informed amount of moves, otherwise cancel plan
         self.plan["target_pos"].append([three_tuple_chosen[2][0], three_tuple_chosen[2][1]]) # go to the senders shooting position
-        self.plan["shoot_pos"].append([three_tuple_chosen[0][0], three_tuple_chosen[0][1]]) # shoot at informed position
+        self.plan["shoot_pos"].append((three_tuple_chosen[0][0], three_tuple_chosen[0][1])) # shoot at informed position
 
         if self.debug:
             print("Agent-" + str(self.ID) + ": Successfully sent a message and commits to killing a wumpus at " + str(([three_tuple_chosen[0][0], three_tuple_chosen[0][1]])))
 
         return content
 
+    def reset_wumpi_guess(self):
+        """
+        Removes all large wumpi from the knowledge base. Can be useful to avoid unnecessary alternative guesses after killing a large wumpus.
+        """
+        if self.debug:
+            print(f"Agent-{self.ID}: Removing all large wumpus guesses")
+        for row in range(self.grid_size):
+            for col in range(self.grid_size):
+                if State.L_WUMPUS in self.knowledge[row][col]["state"]:
+                    self.knowledge[row][col]["state"].remove(State.L_WUMPUS)
+
+    def reset(self):
+        """
+        Resets the agent's knowledge, plan, perception and life-state. Necessary upon starting the next game. Should be called from the environment.
+        """
+        # Reset knowledge
+        self.knowledge = [[{
+                            "state": [], # assumes, that a field could have this state
+                            "blocks": [] # assumes, that a field 100% cannot have this state
+                            } for _ in range(self.grid_size)] for _ in range(self.grid_size)]
+        # start randomly exploring
+        self.plan = {
+            "status": Plan.RANDOM,
+            "patience": None, # optional int: agent follows a plan for a set number of actions, before resetting to "status": Plan.RANDOM
+            "target_pos": [], # optional [[int,int], ...]: when "status": Plan.GO_TO the agent should go to specified position
+            "shoot_pos": [] # optional [[int,int]]: upon reaching a target_pos, shoot these coordinates (requires convertion to direction)
+        }
+        self.perceptions = None
+        self.status = Status.alive
+
+    def buy_arrows(self):
+        budget = self.gold
+        arrows = 0
+        while arrows <= MAX_ARROWS and budget >= ARROW_PRICE:
+            arrows += 1
+            budget -= ARROW_PRICE
+        return arrows
 
 class RightAgent(AIAgent):
     """Agent that moves only right and ignores all plans."""
@@ -557,9 +608,6 @@ class RightAgent(AIAgent):
        
 class RandomAgent(AIAgent):
     """Agent that moves randomly."""
-    
-    def buy_arrows(self):
-        return 0
     
     def conversation(self):
         pass
@@ -684,13 +732,13 @@ class DefensiveAgent(AIAgent):
 
     def move(self):
         # Prioritize gold collection if gold is perceived
-        if State.GOLD in self.perceptions:
+        if State.L_GOLD in self.perceptions:
             return "dig"
         
         # Use A* to navigate to known gold positions if available
         for row in range(self.grid_size):
             for col in range(self.grid_size):
-                if State.GOLD in self.knowledge[row][col]["state"]:
+                if State.L_GOLD in self.knowledge[row][col]["state"]:
                     path = a_star_search(self.knowledge, tuple(self.position), (row, col))
                     if path:
                         return path[0]

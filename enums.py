@@ -8,13 +8,13 @@ class State(Enum):
     For representing an agent's knowledge-base, you can use the following:
     - pit, small/big wumpus, safe
     """
-    PIT = "Pit"
-    S_WUMPUS = "S_wumpus" # small wumpus
-    L_WUMPUS = "L_wumpus" # large wumpus
-    S_GOLD = "S_gold" # if there's different amounts of gold, add more options
-    L_GOLD = "L_gold"
-    ARMOR = "armor"
-    SWORD = 'sword'
+    PIT = "P"
+    S_WUMPUS = "wumpus" # small wumpus
+    L_WUMPUS = "Wumpus" # large wumpus
+    S_GOLD = "gold" # if there's different amounts of gold, add more options
+    L_GOLD = "Gold"
+    ARMOR = "Armor"
+    SWORD = 'Sword'
     SAFE = '_' # only to be used for agents?
 
 class Perception(Enum):

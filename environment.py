@@ -6,8 +6,9 @@ from random import randint, shuffle # for randomized world generation
 from utils import get_neighbors, append_unique, manhattan, derange
 import matplotlib.pyplot as plt
 import numpy as np
+import random
 
-MOVES_SCALAR = 3 # scales the maximum number of moves per game
+MOVES_SCALAR = 2 + random.random() # scales the maximum number of moves per game 
 
 class Game():
     ''' p1 : [n, message] => in n moves the player can make a radio again, when message != "" -> the player made this radio last move ''' # TODO Maybe saving all radio calls
@@ -23,23 +24,27 @@ class Game():
             raise ValueError("No agents provided")
         else:
             for i in range(len(agents)):
+                # sets the amount of gold to zero and the amount of arrows to the initial values
                 agents[i].gold = 0
                 agents[i].arrows = grid_properties["amount_arrows_start"]
                 self.radio_possible["p" + str(i+1)] = [0, ""]
 
-        prints = game_properties["prints"]
-        
+        # variable to store the gold counts of the agents
         gold_progress = []
         
         # executes the simulations
         for _ in range(game_properties["num_games"]):
-            gold_progress.append(self.simulate(agents, grid_properties, prints))
+            gold_progress.append(self.simulate(agents, grid_properties, game_properties["prints"]))
         
+        # prints the gold evolution
         if game_properties["plot"]:
             self.plot_gold_evolution(gold_progress, agents)
 
 
     def plot_gold_evolution(self, gold_evolution, agents):
+        """P
+        lots the evolution of the gold amounts of the agents
+        """
         gold_evolution = np.array(gold_evolution)
         gold_evolution = np.transpose(gold_evolution)
         x = list(range(1, gold_evolution.shape[1] + 1))
@@ -120,7 +125,7 @@ class Game():
         max_number_of_moves = int(grid_properties["size"] * grid_properties["size"] * MOVES_SCALAR)
 
         for agent in agents:
-            purchase = agent.buy_arrows()
+            purchase = int(agent.buy_arrows())
             if purchase <= 0:
                 continue
             
@@ -360,7 +365,7 @@ class Game():
         # Extract properties for easier access
         size = grid_properties["size"]
         num_armor = grid_properties["num_armor"]
-        num_swords = grid_properties['num_swords']
+        # num_swords = grid_properties['num_swords']
         num_small_gold = grid_properties["num_small_gold"]
         num_large_gold = grid_properties["num_large_gold"]
         agent_positions = []
@@ -376,7 +381,7 @@ class Game():
                 all_positions.remove((row,col))
                 
         # Total number of objects to place
-        total_objects = num_small_gold + num_large_gold + num_armor + num_swords # + num_s_wumpi + num_l_wumpi
+        total_objects = num_small_gold + num_large_gold + num_armor # + num_swords # + num_s_wumpi + num_l_wumpi
         
         # Shuffle positions and select a subset for object placement
         shuffle(all_positions)
@@ -385,8 +390,8 @@ class Game():
         # Create a list of objects to place
         objects = ([State.S_GOLD] * num_small_gold + 
                    [State.L_GOLD] * num_large_gold +
-                   [State.ARMOR] * num_armor +
-                   [State.SWORD] * num_swords)
+                   [State.ARMOR] * num_armor)
+                #    [State.SWORD] * num_swords)
         
         # Shuffle the objects
         shuffle(objects)

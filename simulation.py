@@ -14,7 +14,7 @@ if __name__ == '__main__':
         "num_small_gold": 2,# Gold spawns
         "num_large_gold": 1,# Gold spawns
         "num_armor": 2,     # Armor spawns
-        "num_swords": 2,    # Sword spawns
+        # "num_swords": 2,    # Sword spawns
         "small_gold": 5,    # Amount of gold for small gold
         "large_gold": 10,   # Amount of gold for large gold
         "arrow_price": 2,   # Price for arrows

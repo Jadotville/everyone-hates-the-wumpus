@@ -12,7 +12,7 @@ if __name__ == '__main__':
         "num_s_wumpi": 2,   # Smol wumpi: this should be pretty low
         "num_l_wumpi": 1,   # Large wumpi: this should be pretty low
         "num_small_gold": 2,# Gold spawns
-        "num_large_gold": 1,# Gold spawns
+        "num_large_gold": 2,# Gold spawns
         "num_armor": 2,     # Armor spawns
         # "num_swords": 2,    # Sword spawns
         "small_gold": 5,    # Amount of gold for small gold
@@ -32,7 +32,7 @@ if __name__ == '__main__':
         }
     
     game_properties = {
-        "num_games": 1,   # number of games to simulate
+        "num_games": 5,   # number of games to simulate
         "prints": True,    # display the game's state in the console
         "plot": True,       # plot the evolution of total amount of gold per agent
     }
@@ -52,20 +52,20 @@ if __name__ == '__main__':
     # ------ START SIMULATION ------
     
     # pass the following setup for a standart game
-    # standart_agents = [
-    #     CooperativeAgent(size=size), 
-    #     RandomAgent(size=size), 
-    #     #RightAgent(size=size), 
-    #     DefensiveAgent(size = size),
-    #     RandomBadAgent(size=size)
-    # ]  
+    standart_agents = [
+        CooperativeAgent(size=size), 
+        RandomAgent(size=size), 
+        #RightAgent(size=size), 
+        DefensiveAgent(size=size),
+        RandomBadAgent(size=size)
+    ]  
     
     # pass the following setup for experimenting
     testing_agents = [
-        RandomAgent(size=size, debug=True),
-        RandomAgent(size=size, risk_aversion=0.95), 
-        RandomAgent(size=size, risk_aversion=0.95), 
-        RandomAgent(size=size, risk_aversion=0.95)
+        RandomAgent(size=size),
+        RandomAgent(size=size, risk_aversion=0.99), 
+        RandomAgent(size=size, risk_aversion=0.99), 
+        RandomAgent(size=size, risk_aversion=0.99)
     ]
     
     # pass the following setup for random agents, they will always try to not step into pits/wumpi like an idiot

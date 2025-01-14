@@ -52,7 +52,7 @@ if __name__ == '__main__':
     # ------ START SIMULATION ------
     
     # pass the following setup for a standart game
-    standart_agents = [
+    standard_agents = [
         CooperativeAgent(size=size), 
         RandomAgent(size=size), 
         #RightAgent(size=size), 
@@ -76,7 +76,7 @@ if __name__ == '__main__':
         RandomAgent(size=size)
     ] 
     
-    game = Game(testing_agents, grid_properties, game_properties)
+    game = Game(standard_agents, grid_properties, game_properties)
     
 
 # TODO: implement armor and swords

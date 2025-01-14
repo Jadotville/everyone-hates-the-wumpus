@@ -380,7 +380,8 @@ class AIAgent(Agent):
      
     def shoot(self):
         if self.debug:
-            print(f"Agent-{self.ID}: Has targets {self.plan["shoot_pos"]}")
+            print(f"Agent-{self.ID}: Has targets {self.plan['shoot_pos']}")
+
         # shooting, if locations were calculated or informed via message (small wumpi work aswell) 
         if (self.arrows <= 0
             or self.plan["patience"] and self.plan["patience"] > 0):
@@ -419,7 +420,7 @@ class AIAgent(Agent):
             self.plan["shoot_pos"].remove(wumpi[0])
             self.reset_wumpi_guess()
             if self.debug:
-                print(f"Agent-{self.ID}: Updated targets {self.plan["shoot_pos"]}")
+                print(f"Agent-{self.ID}: Has targets {self.plan['shoot_pos']}")
                 self.print_knowledge()
         direction = convert_to_direction(self.position, wumpi[0])
         if self.debug:
@@ -672,7 +673,10 @@ class CooperativeAgent(AIAgent):
         self.last_meeting_results = {}  # Dictionary to store results
     
     def buy_arrows(self):
+        if self.gold >= 10 and self.guess_wumpus():
+            return 1
         return 0
+
     def conversation(self):
         pass
         
@@ -682,11 +686,11 @@ class CooperativeAgent(AIAgent):
     def meeting(self, agent):
         """
         Handles a meeting with another agent using the Tit for Tat strategy.
-        If the last interaction with the agent was cooperative, cooperate again.
-        If the last interaction was adversarial, retaliate by robbing.
+        If the last interaction with the agent was nothing, nothing again.
+        If the last interaction was the opposite, revenge by robbing.
         """
         # Get the last meeting result with the other agent, or default to 'cooperate' if none exists
-        result = self.last_meeting_results.get(agent.ID, "cooperate")  # Default to 'cooperate'
+        result = self.last_meeting_results.get(agent.ID, "nothing")  # Default to 'cooperate'
 
         return result
 
@@ -697,8 +701,18 @@ class CooperativeAgent(AIAgent):
         """
         self.last_meeting_results[other_agent.ID] = result
 
+
 # defensive agent who collects gold and ist defensive against robbing
 class DefensiveAgent(AIAgent):
+
+    def move(self):
+        # Priorisiere Armor, wenn bekannt
+        for row, col, direction in get_neighbors(self.knowledge, self.position[0], self.position[1], return_format="full"):
+            if State.ARMOR in self.knowledge[row][col]["state"]:
+                return direction
+
+        # Standardbewegung, falls keine Armor in der Nähe ist
+        return super().move()
 
     def meeting(self, agent):
         # Defensive behavior in meetings
@@ -709,14 +723,13 @@ class DefensiveAgent(AIAgent):
         
     def meeting_result(self, other_agent, result):
         pass
-    
-    def shoot(self):
-        return None
 
     def buy_arrows(self):
+        if self.gold >= 5 and self.arrows == 0:
+            return 1
         return 0
-    def conversation(self):
-        pass
+    
+
 
 class AggressiveAgent:
     def move(self):

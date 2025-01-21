@@ -384,7 +384,11 @@ class Game():
         for row, col in all_positions:
             if grid[row][col]["state"] != None:
                 all_positions.remove((row,col))
-                
+        # remove all agent positions
+        for pos in agent_positions:
+            if pos in all_positions:
+                all_positions.remove(pos)
+
         # Total number of objects to place
         total_objects = num_small_gold + num_large_gold + num_armor # + num_swords # + num_s_wumpi + num_l_wumpi
         

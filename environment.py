@@ -112,6 +112,9 @@ class Game():
         simulates the game given the agents, grid properties
         """
 
+        for agent in agents:
+            agent.status = Status.alive
+
         self.killed_wumpi = 0
         
         # creates the initial grid on which the agents are placed after every move

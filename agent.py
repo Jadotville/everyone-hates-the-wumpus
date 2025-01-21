@@ -731,7 +731,13 @@ class DefensiveAgent(AIAgent):
     
 
 
-class AggressiveAgent:
+class AggressiveAgent(AIAgent):
+
+    def __init__(self, size):
+        super().__init__(size=size)
+        self.target_agents = []
+        self.target_positions = []
+
     def move(self):
         for agent_id, agent_position in self.opinions.items():
             if agent_position not in self.target_positions:

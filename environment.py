@@ -628,8 +628,8 @@ class Game():
             agent2.meeting_result(agent1, "nothing")
 
         # decreasing or increasing the gold of the agents
-        agent1.gold += rm[meeting_reward_pos_1[0]][meeting_reward_pos_1[1]][meeting_reward_pos_1[2]]
-        agent2.gold += rm[meeting_reward_pos_2[0]][meeting_reward_pos_2[1]][meeting_reward_pos_2[2]]
+        agent1.gold = max(0, agent1.gold + rm[meeting_reward_pos_1[0]][meeting_reward_pos_1[1]][meeting_reward_pos_1[2]])
+        agent2.gold = max(0, agent2.gold + rm[meeting_reward_pos_2[0]][meeting_reward_pos_2[1]][meeting_reward_pos_2[2]])
 
         # decreasing the armor of the agents
         if (meeting_reward_pos_1[0] == 0 or meeting_reward_pos_1[0] == 2) and agent1.armor > 0:

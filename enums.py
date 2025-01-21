@@ -52,3 +52,4 @@ class Plan(Enum):
     WAIT = "wait" # not moving, until plan is changed by environment/other agent (e.g. waiting for another agent to kill wumpus together)
     GO_TO = "go_to" # moving towards a given field (e.g. another agent's position, to kill wumpus together)
     EXPLORE = "explore" # go and find unexplored fields randomly/systematically
+    COLLECT_GOLD = "collect_gold" # go and collect gold from wumpus

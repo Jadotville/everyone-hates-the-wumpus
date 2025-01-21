@@ -1,5 +1,5 @@
 from environment import Game
-from agent import RandomAgent, RightAgent, RandomBadAgent, CooperativeAgent, DefensiveAgent
+from agent import RandomAgent, RightAgent, RandomBadAgent, CooperativeAgent, DefensiveAgent, AggressiveAgent
 from enums import Plan
 
 if __name__ == '__main__':
@@ -57,7 +57,8 @@ if __name__ == '__main__':
         RandomAgent(size=size), 
         #RightAgent(size=size), 
         DefensiveAgent(size=size),
-        RandomBadAgent(size=size)
+        RandomBadAgent(size=size),
+        AggressiveAgent(size=size)
     ]  
     
     # pass the following setup for experimenting
@@ -65,7 +66,7 @@ if __name__ == '__main__':
         RandomAgent(size=size),
         RandomAgent(size=size, risk_aversion=0.99), 
         RandomAgent(size=size, risk_aversion=0.99), 
-        RandomAgent(size=size, risk_aversion=0.99)
+        RandomAgent(size=size, risk_aversion=0.99),
     ]
     
     # pass the following setup for random agents, they will always try to not step into pits/wumpi like an idiot

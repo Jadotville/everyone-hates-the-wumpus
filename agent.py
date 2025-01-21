@@ -11,7 +11,14 @@ MAX_ARROWS = 3 # inventory space for arrows
 ARROW_PRICE = 2 # from grid_properties in simulation.py
 
 class Agent(ABC):
-    
+    # when an agent sends a message, it will gets 1, when making a move += 1, when 3 it will look for an accept message
+    message_send_last_move = False
+    # turns into a tuple of coordinates, after shooting a wumpus to collect the gold
+    where_did_i_shoot = False
+    # to check if someone accepted the radio
+    did_someone_accept = False
+    # to check if the agent has to send an accept message and to whom
+    sendAcceptMessage = False
     # current position on the grid (determined by the environment)
     position = [0, 0]
     # unique for every player!
@@ -89,8 +96,8 @@ class Agent(ABC):
         '''
         returns 2element array with [performative verb, content]
         content in form of:
-        "w(x,y) p(x,y) s(m,x,y)"
-        => wumpus at x,y, postition at x,y, shoot in m moves at x,y
+        "w(x,y) p(x,y) s(x,y,m)"
+        => wumpus at x,y, postition at x,y, shoot in m moves at x,y (i am at (x,y))
         -1 if you dont want to give
         if nothing to say empty list
         '''
@@ -224,14 +231,20 @@ class AIAgent(Agent):
         """
         Changes the AI-agent's plan based on reaching the goal or missing patience
         """
+        # dont update when you still have to collect gold
+        if self.plan["status"] == Plan.COLLECT_GOLD:
+            return
+
         # removing target goals
         if self.position in self.plan["target_pos"]:
             if self.debug:
                 print("Agent-" + str(self.ID) + ": Reached goal " + str(self.position))
-            self.plan["target_pos"].remove(self.position)
+
             
             if self.plan["status"] == Plan.GO_TO:
                 self.plan["status"] = Plan.WAIT
+            if self.plan["patience"] <= 0:
+                self.plan["target_pos"].remove(self.position)
         
         # set target to a remaining unexplored field when exploring
         if self.plan["status"] == Plan.EXPLORE:
@@ -261,7 +274,7 @@ class AIAgent(Agent):
             self.plan["patience"] -= 1
         
         # reset plan, upon not having goals or no patience
-        elif self.plan["patience"] <= 0 or not self.plan["target_pos"]:
+        elif self.plan["patience"] <= 0 and not self.plan["target_pos"]:
             self.reset_plan()
     
     def reset_plan(self):
@@ -269,6 +282,8 @@ class AIAgent(Agent):
         self.plan["patience"] = None
         self.plan["status"] = Plan.RANDOM
         self.plan["target_pos"] = []
+        self.message_send_last_move = False
+        self.did_someone_accept = False
     
     def update_knowledge(self):
         """Updates the agent's knowledge base on pit/wumpus locations. Should be called every turn"""
@@ -339,49 +354,100 @@ class AIAgent(Agent):
            
     def accept_message(self):
         """
-        Processes a message and updates the agent's plan accordingly. Assumes, that each message is for informing a wumpus location in the following format: 'w(x,y) p(x,y) s(x,y,z)'
+        Processes a message and updates the agent's plan accordingly. Assumes, that each message is for informing a wumpus location in the following format: ['inform', 'w(x,y) p(x,y) s(x,y,z)'] or ['accept', player_id as String]
         - currently only works with a single message provided by the environment, so it cannot choose a specific message itself
         """
         # choose random message from another agent, if nothing to do and arrows available
-        # self.messages.pop(self.ID)
-        if (not self.messages
-            or not self.plan["status"] == Plan.RANDOM
+        message_available = False
+        for message in self.messages.items():
+            if message[1]:
+                message_available = True
+                break
+
+
+        if (not message_available
             or self.arrows <= 0 ): 
             return
-        # chosen_message = random.choice([message for message in self.messages.values() if message])
-        
-        # input string for testing
-        # input_string = "w(1,2) p(3,4) s(1,2,3)"
+        if not self.plan["status"] == Plan.RANDOM:
+            for message_accept in self.messages.items():
+                if message_accept[1]:
+                    if message_accept[1][0] == "accept":
+                        if message_accept[1][1] == self.ID:
+                            self.did_someone_accept = True
+            return
         if self.debug:
             print("Agent-" + str(self.ID) + ": Trying to accept a random message " + str(self.messages))
-        
+
+        # filter for messages with performative "inform"
+        messages_inform = []
+        for message in self.messages.items():
+            if message[1] != "" and message[1][0] == "inform":
+                messages_inform.append(message[1])
+
+        if not messages_inform:
+            return
+
         # parse the message string
         pattern = r"(\w)\(([^)]+)\)"
-        matches = findall(pattern, self.messages)
-        
-        
+        paths = []
+        # find preferred message by (assumed) shortest way
+        for message_pref in messages_inform:
+            matches = findall(pattern, message_pref[1])
+            parsed_data = {key: tuple(map(int, value.split(','))) for key, value in matches}
+            w = parsed_data['w']
+            p = parsed_data['p']
+            s = parsed_data['s']
+            path = a_star_search(self.knowledge, (self.position[0], self.position[1]), (s[0], s[1]), chance=self.risk_aversion)
+            paths.append(path)
+        # find path with min length
+        index_min = 0
+        for path in paths:
+            if path is not None:
+                if paths[index_min]:
+                    if len(path) < len(paths[index_min]):
+                        index_min = paths.index(path)
+        # message random means the chosen "inform" message
+        message_random = messages_inform[index_min]
+        matches = findall(pattern, message_random[1])
+
         # matches = findall(pattern, input_string)
         parsed_data = {key: tuple(map(int, value.split(','))) for key, value in matches}
-        
+
         w = parsed_data['w']
         # p = parsed_data['p']
         s = parsed_data['s']
-        
-        # set up the next plan
-        self.plan["status"] = Plan.GO_TO
-        self.plan["patience"] = s[2] # shoot wumpus after informed amount of moves, otherwise cancel plan
-        self.plan["target_pos"].append([s[0], s[1]]) # go to the senders shooting position
-        self.plan["shoot_pos"].append((w[0], w[1])) # shoot at informed position
-        
-        if self.debug:
-            print("Agent-" + str(self.ID) + ": Successfully acknowledged a message and updated its plan to killing a wumpus at " + str(([w[0], w[1]])))
+
+        acceptMessageTo = ""
+        for message in self.messages.items():
+            if message[1] == message_random:
+                # do i want to accept?
+                path = a_star_search(self.knowledge, (self.position[0], self.position[1]),
+                                     (s[0], s[1]),
+                                     chance=self.risk_aversion)
+                if  path == None:
+                    acceptMessageTo = False
+                    break
+                elif len(path) < s[2]:
+                    acceptMessageTo = message[0]
+                    # set up the next plan
+                    self.plan["status"] = Plan.GO_TO
+                    self.plan["patience"] = s[2]  # shoot wumpus after informed amount of moves, otherwise cancel plan
+                    self.plan["target_pos"].append([s[0], s[1]])  # go to the senders shooting position
+                    self.plan["shoot_pos"].append((w[0], w[1]))  # shoot at informed position
+                    self.sendAcceptMessage = acceptMessageTo
+                    if self.debug:
+                        print("Agent-" + str(
+                            self.ID) + ": Successfully acknowledged a message and updated its plan to killing a wumpus at " + str(
+                            ([w[0], w[1]])))
+                else:
+                    acceptMessageTo = False
+                break
             
             
      
     def shoot(self):
         if self.debug:
             print(f"Agent-{self.ID}: Has targets {self.plan['shoot_pos']}")
-
         # shooting, if locations were calculated or informed via message (small wumpi work aswell) 
         if (self.arrows <= 0
             or self.plan["patience"] and self.plan["patience"] > 0):
@@ -389,10 +455,11 @@ class AIAgent(Agent):
         
         # if self.debug:
         #     print("Agent-" + str(self.ID) + ": Has enough arrows, position at " + str(self.position))
-            
+
+        # get neibors, where a wumpus could be
         wumpi = get_neighbors(self.knowledge, self.position[0], self.position[1], consider_obstacles=False)
-        # if self.debug:
-        #     print("Agent-" + str(self.ID) + ": Neighbors at " + str(wumpi))
+
+        # check if wumpus is a neighbor
         wumpi = [
             (wumpus[0], wumpus[1])
             for wumpus in wumpi
@@ -441,10 +508,16 @@ class AIAgent(Agent):
         self.update_knowledge()
         self.update_plan()
         status = self.plan["status"]
-        
+
         if self.debug:
             self.print_knowledge()
-        
+        if self.did_someone_accept is False and self.message_send_last_move == 3:
+            self.reset_plan()
+            safe_moves = self.select_safe_moves()
+            next_move = random.choice(safe_moves)
+            return next_move
+        if self.message_send_last_move == 3:
+            self.message_send_last_move = False
         # random exploring
         if status == Plan.RANDOM:
             safe_moves = self.select_safe_moves()
@@ -455,7 +528,7 @@ class AIAgent(Agent):
         # stand still
         elif status == Plan.WAIT:
             next_move = None
-        
+
         # go to a specific field or unexplored territory
         elif status == Plan.GO_TO or status == Plan.EXPLORE:
             path = a_star_search(self.knowledge, (self.position[0], self.position[1]), (self.plan["target_pos"][0][0],self.plan["target_pos"][0][1]), chance=self.risk_aversion)
@@ -467,7 +540,20 @@ class AIAgent(Agent):
                 next_move = random.choice(safe_moves)
             else:
                 next_move = convert_to_direction(self.position, path[1])
-        
+        elif status == Plan.COLLECT_GOLD:
+            if self.where_did_i_shoot:
+                if self.where_did_i_shoot[0] < self.position[0]:
+                    next_move = "up"
+                elif self.where_did_i_shoot[0] > self.position[0]:
+                    next_move = "down"
+                elif self.where_did_i_shoot[1] < self.position[1]:
+                    next_move = "left"
+                elif self.where_did_i_shoot[1] > self.position[1]:
+                    next_move = "right"
+                self.reset_plan()
+                self.where_did_i_shoot = False
+        if self.message_send_last_move == 1 or self.message_send_last_move == 2:
+            self.message_send_last_move += 1
         return next_move
     
     def conversation(self):
@@ -481,12 +567,20 @@ class AIAgent(Agent):
 
     def radio(self):
         # don't send messages, when you've already planned something
-        if (not self.plan["status"] == Plan.RANDOM
-            or random.randint(1, 10) >= 9): # regulate amount of messages for less overlapping
+        if (not self.plan["status"] == Plan.RANDOM):
+            # already accepted plan but has to send accept message:
+            if self.sendAcceptMessage is not False:
+                list = ["accept", self.sendAcceptMessage]
+                self.sendAcceptMessage = False
+                return list
             return []
-        
+
+        # regulate amount of messages for less overlapping
+        if random.randint(1, 10) >= 9:
+            return []
+
         content = []
-        three_tuple = []
+        three_tuple = [] # [(x_wumpus,y_wupmus), own_position, (x_to_go,y_to_go,path_len)] for every wumpus
         position = (self.position[0], self.position[1])
         
         # check out all large wumpi
@@ -525,7 +619,7 @@ class AIAgent(Agent):
 
         if self.debug:
             print("Agent-" + str(self.ID) + ": Successfully sent a message and commits to killing a wumpus at " + str(([three_tuple_chosen[0][0], three_tuple_chosen[0][1]])))
-
+        self.message_send_last_move = 1
         return content
 
     def reset_wumpi_guess(self):
@@ -555,6 +649,7 @@ class AIAgent(Agent):
             "target_pos": [], # optional [[int,int], ...]: when "status": Plan.GO_TO the agent should go to specified position
             "shoot_pos": [] # optional [[int,int]]: upon reaching a target_pos, shoot these coordinates (requires convertion to direction)
         }
+        self.did_someone_accept = False
         self.perceptions = None
         self.status = Status.alive
 
@@ -681,7 +776,55 @@ class CooperativeAgent(AIAgent):
         pass
         
     def shoot(self):
-        pass
+        if self.debug:
+            print(f"Agent-{self.ID}: Has targets {self.plan['shoot_pos']}")
+        # shooting, if locations were calculated or informed via message (small wumpi work aswell)
+        if (self.arrows <= 0
+                or self.plan["patience"] and self.plan["patience"] > 0):
+            return None
+
+        # if self.debug:
+        #     print("Agent-" + str(self.ID) + ": Has enough arrows, position at " + str(self.position))
+
+        # get neibors, where a wumpus could be
+        wumpi = get_neighbors(self.knowledge, self.position[0], self.position[1], consider_obstacles=False)
+
+        # check if wumpus is a neighbor
+        wumpi = [
+            (wumpus[0], wumpus[1])
+            for wumpus in wumpi
+            if (wumpus[0], wumpus[1]) in self.plan["shoot_pos"] or self.knowledge[wumpus[0]][wumpus[1]]["state"] == [
+                State.S_WUMPUS]
+        ]
+        if not wumpi:
+            return None
+
+        if self.debug:
+            print("Agent-" + str(self.ID) + ": Found wumpi to shoot at " + str(wumpi))
+
+        # assume, agent may have killed a wumpus and made it safe
+        if State.S_WUMPUS in self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"]:
+            self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"].remove(State.S_WUMPUS)
+            append_unique(self.knowledge[wumpi[0][0]][wumpi[0][1]]["blocks"], State.S_WUMPUS)
+        # if there are no assumptions anymore, claim safety
+        if not self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"]:
+            append_unique(self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"], State.SAFE)
+
+        # plan to go to the shot position and collect gold
+        # append_unique((self.plan["target_pos"]), wumpi[0])
+
+        # update wumpi guesses and return shot direction
+        if wumpi[0] in self.plan["shoot_pos"]:
+            self.plan["shoot_pos"].remove(wumpi[0])
+            self.reset_wumpi_guess()
+            if self.debug:
+                print(f"Agent-{self.ID}: Has targets {self.plan['shoot_pos']}")
+                self.print_knowledge()
+        direction = convert_to_direction(self.position, wumpi[0])
+        if self.debug:
+            print("Agent-" + str(self.ID) + ": Shot an arrow in direction " + direction + " at " + str(wumpi[0]))
+        return direction
+
 
     def meeting(self, agent):
         """

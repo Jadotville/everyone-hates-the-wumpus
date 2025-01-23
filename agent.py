@@ -872,46 +872,42 @@ class DefensiveAgent(AIAgent):
             return 1
         return 0
     
-
-
 class AggressiveAgent(AIAgent):
-
     def __init__(self, size):
-        super().__init__(size=size)
-        self.target_agents = []
-        self.target_positions = []
+        super().__init__(size)
+        self.opinions = {} 
 
-    def move(self):
-        for agent_id, agent_position in self.opinions.items():
-            if agent_position not in self.target_positions:
-                self.target_positions.append(agent_position)
-        
-        if self.target_positions:
-            closest_target = min(
-                self.target_positions,
-                key=lambda position: abs(position[0] - self.current_position[0]) + abs(position[1] - self.current_position[1])
-            )
-            self.plan = {"Status": Plan.GO_TO, "Target Position": closest_target}
-            planned_path = a_star_search(self.knowledge, tuple(self.current_position), closest_target)
-            if planned_path:
-                return convert_to_direction(self.current_position, planned_path[1])
-            
-        safe_directions = self.select_safe_moves()
-        return random.choice(safe_directions) if safe_directions else None
+    def update_opinions(self, identifier, opinion):
+        self.opinions[identifier] = opinion
 
     def meeting(self, agent):
-        return "rob"
-    
-    def meeting_result(self, other_agent, result):
-        if result == "failed":
-            self.target_agents.remove(other_agent.position)
-        pass
-    
-    def shoot(self):
-        return None
-    
-    def radio(self):
-        return []
 
+        if agent.ID in self.opinions:
+            opinion = self.opinions[agent.ID]
+            if opinion == "enemy":
+                return "rob" 
+            elif opinion == "gold_holder":
+                return "rob"  
+            elif opinion == "friendly":
+                return "nothing"
+        else:
+            return "rob"
+    
+    def action(self):
+        if State.GOLD in self.perceptions:
+            return "dig"
+        
+        for agent in self.opinions:
+            if self.opinions[agent] == "enemy":
+                return "rob"
+        
+        safe_moves = self.select_safe_moves()
+        return random.choice(safe_moves) if safe_moves else None
 
-
+    def update_knowledge(self):
+        super().update_knowledge() 
+        if self.perceptions:
+            for perception in self.perceptions:
+                if perception == Perception.SMELLY:
+                    self.update_opinions("WumpusNearby", "enemy")
+    

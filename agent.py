@@ -873,41 +873,130 @@ class DefensiveAgent(AIAgent):
         return 0
     
 class AggressiveAgent(AIAgent):
+
     def __init__(self, size):
         super().__init__(size)
-        self.opinions = {} 
+        self.opinions = {}  
+        self.last_meeting_results = {}  
+        self.plan = {"type": "RANDOM", "goal": None, "patience": 5, "status": "idle", "target_pos": []}  
 
-    def update_opinions(self, identifier, opinion):
-        self.opinions[identifier] = opinion
+    def buy_arrows(self):
+        if self.gold >= 10 and self.guess_wumpus():
+            return 1
+        return 0
+
+    def conversation(self):
+        pass
+
+    def shoot(self):
+        if self.debug:
+            print(f"Agent-{self.ID}: Has targets {self.plan['shoot_pos']}")
+
+        if self.arrows <= 0 or (self.plan["patience"] and self.plan["patience"] > 0):
+            return None
+
+        wumpi = get_neighbors(self.knowledge, self.position[0], self.position[1], consider_obstacles=False)
+
+        wumpi = [
+            (wumpus[0], wumpus[1])
+            for wumpus in wumpi
+            if (wumpus[0], wumpus[1]) in self.plan["shoot_pos"] or self.knowledge[wumpus[0]][wumpus[1]]["state"] == [
+                State.S_WUMPUS]
+        ]
+        if not wumpi:
+            return None
+
+        if self.debug:
+            print("Agent-" + str(self.ID) + ": Found wumpi to shoot at " + str(wumpi))
+
+        if State.S_WUMPUS in self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"]:
+            self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"].remove(State.S_WUMPUS)
+            append_unique(self.knowledge[wumpi[0][0]][wumpi[0][1]]["blocks"], State.S_WUMPUS)
+
+        if not self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"]:
+            append_unique(self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"], State.SAFE)
+
+        if wumpi[0] in self.plan["shoot_pos"]:
+            self.plan["shoot_pos"].remove(wumpi[0])
+            self.reset_wumpi_guess()
+            if self.debug:
+                print(f"Agent-{self.ID}: Has targets {self.plan['shoot_pos']}")
+                self.print_knowledge()
+
+        direction = convert_to_direction(self.position, wumpi[0])
+        if self.debug:
+            print("Agent-" + str(self.ID) + ": Shot an arrow in direction " + direction + " at " + str(wumpi[0]))
+        return direction
 
     def meeting(self, agent):
+        result = self.last_meeting_results.get(agent.ID, "rob")  
+        return result
 
-        if agent.ID in self.opinions:
-            opinion = self.opinions[agent.ID]
-            if opinion == "enemy":
-                return "rob" 
-            elif opinion == "gold_holder":
-                return "rob"  
-            elif opinion == "friendly":
-                return "nothing"
-        else:
-            return "rob"
-    
-    def action(self):
-        if State.GOLD in self.perceptions:
-            return "dig"
-        
-        for agent in self.opinions:
-            if self.opinions[agent] == "enemy":
-                return "rob"
-        
-        safe_moves = self.select_safe_moves()
-        return random.choice(safe_moves) if safe_moves else None
+    def meeting_result(self, other_agent, result):
+        self.last_meeting_results[other_agent.ID] = result
 
     def update_knowledge(self):
-        super().update_knowledge() 
-        if self.perceptions:
+        super().update_knowledge()
+        if not self.perceptions:
+            for neighbor in self.get_neighbors(self.position):
+                self.mark_safe(neighbor)
+        else:
             for perception in self.perceptions:
                 if perception == Perception.SMELLY:
-                    self.update_opinions("WumpusNearby", "enemy")
+                    self.mark_dangerous(self.position, "Wumpus")
+                elif perception == Perception.BREEZY:
+                    self.mark_dangerous(self.position, "Pit")
+
+    def mark_safe(self, position):
+        x, y = position
+        self.knowledge[x][y] = "safe"
+
+    def mark_dangerous(self, position, danger_type):
+        x, y = position
+        self.knowledge[x][y] = danger_type
+
+    def get_neighbors(self, position):
+        x, y = position
+        neighbors = []
+        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < len(self.knowledge) and 0 <= ny < len(self.knowledge):
+                neighbors.append((nx, ny))
+        return neighbors
+
+    def plan_action(self):
+            if self.plan["type"] == "RANDOM":
+                safe_moves = self.select_safe_moves()
+                if safe_moves:
+                    return random.choice(safe_moves)
+                return "wait"  
+            elif self.plan["type"] == "GO_TO":
+                goal_action = self.execute_a_star(self.plan["goal"])
+                return goal_action if goal_action else "wait"  
+            elif self.plan["type"] == "WAIT":
+                self.plan["patience"] -= 1
+                if self.plan["patience"] <= 0:
+                    self.plan = {"type": "RANDOM", "goal": None, "patience": 5, "status": "idle", "target_pos": []}
+                return "wait"
+            return "wait"  
     
+    def move(self):
+            next_move = self.plan_action()  
+            if next_move is None:
+                if self.debug:
+                    print(f"Agent-{self.ID}: No valid move, defaulting to wait.")
+                next_move = "wait"
+            if self.debug:
+                print(f"Agent-{self.ID}: Decided move: {next_move}")
+            return next_move
+    
+    def execute_a_star(self, goal):
+        return "move_to_goal"
+
+    def select_safe_moves(self):
+        safe_moves = []
+        for neighbor in self.get_neighbors(self.position):
+            x, y = neighbor
+            if self.knowledge[x][y] == "safe":
+                safe_moves.append(neighbor)
+        return safe_moves

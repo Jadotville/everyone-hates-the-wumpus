@@ -1,5 +1,5 @@
 import copy
-
+from enums import Plan
 import agent
 from enums import State, Perception, Status # for storing additional information in a grid's field
 from random import randint, shuffle # for randomized world generation
@@ -112,6 +112,9 @@ class Game():
         simulates the game given the agents, grid properties
         """
 
+        for agent in agents:
+            agent.status = Status.alive
+
         self.killed_wumpi = 0
         
         # creates the initial grid on which the agents are placed after every move
@@ -146,8 +149,8 @@ class Game():
         while not self.is_game_over(agents, num_wumpi) and max_number_of_moves > move_counter:            
             if prints:
                 print("\nMove: ", move_counter)
-                print(self.radio_possible)
-                print("armor")
+                print("Radio from last round: ", self.radio_possible)
+                print("armor:")
                 for agent in agents:
                     print(agent.ID + " " + str(agent.armor))
 
@@ -157,14 +160,8 @@ class Game():
                 if self.radio_possible[key][1] == '':
                     messages[key] = ''
                 else:
-                    messages[key] = self.radio_possible[key][1][1]
-                    if prints:
-                        print(f"{messages[key]} = " + str(messages[key]))
-
-            shots = []    
-            
-            # makes sure, every agent recieves a randomized message from someone else
-            random_message_keys = derange(list(messages.keys()))
+                    messages[key] = self.radio_possible[key][1]
+            shots = []
             
             for agent in agents:
                 try:
@@ -175,9 +172,15 @@ class Game():
                 
                 # agent perceives and then moves
                 agent.perceptions = copy.copy(grid[agent.position[0]][agent.position[1]]["perceptions"])
-                
-                agent.messages = messages[random_message_keys[0]]
-                random_message_keys.pop(0)
+
+                temp_messages = copy.deepcopy(messages)
+                # give all messages except the own to the agent
+                for key, message in temp_messages.items():
+                    if key == agent.ID:
+                        temp_messages.pop(key)
+                        break
+
+                agent.messages = temp_messages
                     
              
             for agent in agents:
@@ -194,6 +197,9 @@ class Game():
                         shots.append([agent.position[0], agent.position[1]-1])
                     else:
                         shots.append([agent.position[0], agent.position[1]+1])
+                    agent.where_did_i_shoot = (shots[-1][0], shots[-1][1])
+                    # collect gold after shooting
+                    agent.plan["status"] = Plan.COLLECT_GOLD
             if prints:
                 print("Shots: ", shots)
           
@@ -237,15 +243,13 @@ class Game():
                     if radio_call is []:
                         pass
                     elif len(radio_call) == 2:
-                        if radio_call[0] == "inform":
-                            self.radio_possible[agent.ID][1] = radio_call
-                            self.radio_possible[agent.ID][0] = 5
+                        self.radio_possible[agent.ID][1] = radio_call
+                        self.radio_possible[agent.ID][0] = 5
                     else:
                         # TODO: errorhandling
                         pass
                 else:
                     self.radio_possible[agent.ID][0] -= 1
-
             # prints the grid
             if prints:
                 self.print_grid(grid)
@@ -380,7 +384,11 @@ class Game():
         for row, col in all_positions:
             if grid[row][col]["state"] != None:
                 all_positions.remove((row,col))
-                
+        # remove all agent positions
+        for pos in agent_positions:
+            if pos in all_positions:
+                all_positions.remove(pos)
+
         # Total number of objects to place
         total_objects = num_small_gold + num_large_gold + num_armor # + num_swords # + num_s_wumpi + num_l_wumpi
         
@@ -627,8 +635,8 @@ class Game():
             agent2.meeting_result(agent1, "nothing")
 
         # decreasing or increasing the gold of the agents
-        agent1.gold += rm[meeting_reward_pos_1[0]][meeting_reward_pos_1[1]][meeting_reward_pos_1[2]]
-        agent2.gold += rm[meeting_reward_pos_2[0]][meeting_reward_pos_2[1]][meeting_reward_pos_2[2]]
+        agent1.gold = max(0, agent1.gold + rm[meeting_reward_pos_1[0]][meeting_reward_pos_1[1]][meeting_reward_pos_1[2]])
+        agent2.gold = max(0, agent2.gold + rm[meeting_reward_pos_2[0]][meeting_reward_pos_2[1]][meeting_reward_pos_2[2]])
 
         # decreasing the armor of the agents
         if (meeting_reward_pos_1[0] == 0 or meeting_reward_pos_1[0] == 2) and agent1.armor > 0:

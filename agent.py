@@ -671,6 +671,7 @@ class CooperativeAgent(AIAgent):
     def __init__(self, size):
         super().__init__(size)
         self.last_meeting_results = {}  # Dictionary to store results
+        self.gold_positions = []
     
     def buy_arrows(self):
         if self.gold >= 10 and self.guess_wumpus():
@@ -700,6 +701,29 @@ class CooperativeAgent(AIAgent):
         This allows the agent to decide the strategy in the next meeting.
         """
         self.last_meeting_results[other_agent.ID] = result
+    
+    def move(self):
+        """
+        Bewegt den CooperativeAgent gezielt zu Goldpositionen oder zu sicheren Feldern, falls kein Gold erreichbar ist.
+        """
+        # Prüfe bekannte Goldpositionen
+        if self.gold_positions:
+            # Sortiere Goldpositionen nach Entfernung (Manhattan-Distanz)
+            self.gold_positions.sort(key=lambda pos: abs(pos[0] - self.position[0]) + abs(pos[1] - self.position[1]))
+            
+            for gold_pos in self.gold_positions:
+                # Finde einen sicheren Pfad zum Gold mit A*-Algorithmus
+                path = a_star_search(self.knowledge, tuple(self.position), tuple(gold_pos), chance=self.risk_aversion)
+                
+                if path:  # Wenn ein sicherer Pfad existiert
+                    # Bewege dich zum nächsten Schritt auf dem Pfad
+                    return convert_to_direction(self.position, path[1])
+        
+        # Wenn kein Gold erreichbar ist, bewege dich sicher
+        safe_moves = self.select_safe_moves()
+        return random.choice(safe_moves) if safe_moves else None
+
+
 
 
 # defensive agent who collects gold and ist defensive against robbing

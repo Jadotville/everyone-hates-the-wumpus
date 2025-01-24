@@ -760,16 +760,105 @@ class RandomBadAgent(AIAgent):
 
         return content
 
-# Cooperative Agent to get gold efficiently
+# Cooperative Agent to kill big wumpi and cooperate with other agents
 class CooperativeAgent(AIAgent):
     
     def __init__(self, size):
         super().__init__(size)
         self.last_meeting_results = {}  # Dictionary to store results
-        self.gold_positions = []
+
+
+    def radio(self):
+        """
+        Creates a radio message to inform other agents about a Wumpus location.
+        Assumes the agent detects a Wumpus nearby and has relevant information to share.
+        """
+        try:
+            # Check if the agent perceives a Wumpus and has arrows available
+            if Perception.VERY_SMELLY in self.perceptions and self.arrows > 0:
+                # Guess Wumpus position based on perceptions or knowledge
+                wumpus_pos = self.guess_wumpus()
+
+                if not wumpus_pos or not isinstance(wumpus_pos, tuple) or len(wumpus_pos) != 2:
+                    if self.debug:
+                        print(f"Agent-{self.ID}: Unable to guess Wumpus position.")
+                    return []
+
+                # Current position of the agent
+                agent_pos = self.position
+
+                # Determine shooting position and time (adjust shooting delay as needed)
+                shooting_pos = [agent_pos[0], agent_pos[1], 5]  # Example: 5 moves to shoot
+
+                # Construct the message in the required format
+                message_content = f"w({wumpus_pos[0]},{wumpus_pos[1]}) p({agent_pos[0]},{agent_pos[1]}) s({shooting_pos[0]},{shooting_pos[1]},{shooting_pos[2]})"
+                if self.debug:
+                    print(f"Agent-{self.ID}: Broadcasting message - {message_content}")
+                return ["inform", message_content]
+
+            if self.debug:
+                print(f"Agent-{self.ID}: No message to broadcast.")
+            return []
+
+        except Exception as e:
+            if self.debug:
+                print(f"Agent-{self.ID}: Error in radio - {e}")
+            return []
+
+
+
+
+    def move(self):
+        """Move towards large Wumpi or explore based on current plan."""
+        self.update_plan()
+
+        if self.plan["status"] == Plan.GO_TO and self.plan["target_pos"]:
+            # Move towards the target position
+            path = a_star_search(self.knowledge, tuple(self.position), tuple(self.plan["target_pos"][0]), chance=self.risk_aversion)
+            if path and len(path) > 1:
+                return convert_to_direction(self.position, path[1])
+            else:
+                self.reset_plan()
+                return "wait"  # Prevent infinite recursion
+
+        if Perception.VERY_SMELLY in self.perceptions:
+            # Detect large Wumpi and set a plan to approach
+            targets = self.get_adjacent_positions_with_state(State.L_WUMPUS)
+            if targets:
+                self.plan["status"] = Plan.GO_TO
+                self.plan["target_pos"] = [targets[0]]
+                return "wait"  # Wait for the next move call to act on the plan
+
+        # If no specific plan, fallback to the superclass's move logic
+        return super().move()
+
+    def update_plan(self):
+        """Update the agent's plan based on perceptions and goals."""
+        if self.plan["status"] == Plan.GO_TO and self.position == self.plan["target_pos"][0]:
+            if self.is_at_large_wumpus():
+                # Wait for others if at the large Wumpus location
+                self.plan["status"] = Plan.WAIT
+            else:
+                self.reset_plan()
+        elif self.plan["status"] == Plan.WAIT:
+            # Wait indefinitely or until an external event
+            pass
+        else:
+            # Default exploration
+            super().update_plan()
+
+    def get_adjacent_positions_with_state(self, state):
+        """Find next positions with the specified state."""
+        neighbors = get_neighbors(self.knowledge, self.position[0], self.position[1], return_format="full")
+        return [pos[:2] for pos in neighbors if state in self.knowledge[pos[0]][pos[1]]["state"]]
+    
+    def is_at_large_wumpus(self):
+        """Check if the agent is currently on a large Wumpus field."""
+        field = self.knowledge[self.position[0]][self.position[1]]
+        return State.L_WUMPUS in field["state"]
     
     def buy_arrows(self):
-        if self.gold >= 10 and self.guess_wumpus():
+        if self.gold >= 10 and self.guess_wumpus() and self.arrows < 4:
             return 1
         return 0
 
@@ -844,42 +933,13 @@ class CooperativeAgent(AIAgent):
         This allows the agent to decide the strategy in the next meeting.
         """
         self.last_meeting_results[other_agent.ID] = result
-    
-    def move(self):
-        """
-        Bewegt den CooperativeAgent gezielt zu Goldpositionen oder zu sicheren Feldern, falls kein Gold erreichbar ist.
-        """
-        # Prüfe bekannte Goldpositionen
-        if self.gold_positions:
-            # Sortiere Goldpositionen nach Entfernung (Manhattan-Distanz)
-            self.gold_positions.sort(key=lambda pos: abs(pos[0] - self.position[0]) + abs(pos[1] - self.position[1]))
-            
-            for gold_pos in self.gold_positions:
-                # Finde einen sicheren Pfad zum Gold mit A*-Algorithmus
-                path = a_star_search(self.knowledge, tuple(self.position), tuple(gold_pos), chance=self.risk_aversion)
-                
-                if path:  # Wenn ein sicherer Pfad existiert
-                    # Bewege dich zum nächsten Schritt auf dem Pfad
-                    return convert_to_direction(self.position, path[1])
-        
-        # Wenn kein Gold erreichbar ist, bewege dich sicher
-        safe_moves = self.select_safe_moves()
-        return random.choice(safe_moves) if safe_moves else None
+
 
 
 
 
 # defensive agent who collects gold and ist defensive against robbing
 class DefensiveAgent(AIAgent):
-
-    def move(self):
-        # Priorisiere Armor, wenn bekannt
-        for row, col, direction in get_neighbors(self.knowledge, self.position[0], self.position[1], return_format="full"):
-            if State.ARMOR in self.knowledge[row][col]["state"]:
-                return direction
-
-        # Standardbewegung, falls keine Armor in der Nähe ist
-        return super().move()
 
     def meeting(self, agent):
         # Defensive behavior in meetings
@@ -892,7 +952,7 @@ class DefensiveAgent(AIAgent):
         pass
 
     def buy_arrows(self):
-        if self.gold >= 5 and self.arrows == 0:
+        if self.gold >= 5 and self.arrows < 5:
             return 1
         return 0
     

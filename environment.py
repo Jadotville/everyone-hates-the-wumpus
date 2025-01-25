@@ -15,6 +15,7 @@ class Game():
     radio_possible = {}
     killed_wumpi = 0
     dead = []
+    dig_place = []
     def __init__(self, agents, grid_properties, game_properties, prints=True):
         """
         - executes the simulations
@@ -33,7 +34,13 @@ class Game():
 
         # variable to store the gold counts of the agents
         gold_progress = []
-        
+
+        # init the dig grid
+        for i in range(grid_properties["size"]):
+            self.dig_place.append([])
+            for j in range(grid_properties["size"]):
+                self.dig_place[i].append(0)
+
         # executes the simulations
         for _ in range(game_properties["num_games"]):
             gold_progress.append(self.simulate(agents, grid_properties, game_properties["prints"]))
@@ -638,10 +645,18 @@ class Game():
         if meeting_reward_pos_1[0] == 3:
             agent1.meeting_result(agent2, "nothing")
             agent2.meeting_result(agent1, "nothing")
+            if self.dig_place[agent1.position[0]][agent1.position[1]] == 0:
+                agent1.gold = max(0, agent1.gold + rm[meeting_reward_pos_1[0]][meeting_reward_pos_1[1]][
+                    meeting_reward_pos_1[2]])
+                agent2.gold = max(0, agent2.gold + rm[meeting_reward_pos_2[0]][meeting_reward_pos_2[1]][
+                    meeting_reward_pos_2[2]])
+                self.dig_place[agent1.position[0]][agent1.position[1]] = 1
+
 
         # decreasing or increasing the gold of the agents
-        agent1.gold = max(0, agent1.gold + rm[meeting_reward_pos_1[0]][meeting_reward_pos_1[1]][meeting_reward_pos_1[2]])
-        agent2.gold = max(0, agent2.gold + rm[meeting_reward_pos_2[0]][meeting_reward_pos_2[1]][meeting_reward_pos_2[2]])
+        if not meeting_reward_pos_1[0] == 3:
+            agent1.gold = max(0, agent1.gold + rm[meeting_reward_pos_1[0]][meeting_reward_pos_1[1]][meeting_reward_pos_1[2]])
+            agent2.gold = max(0, agent2.gold + rm[meeting_reward_pos_2[0]][meeting_reward_pos_2[1]][meeting_reward_pos_2[2]])
 
         # decreasing the armor of the agents
         if (meeting_reward_pos_1[0] == 0 or meeting_reward_pos_1[0] == 2) and agent1.armor > 0:

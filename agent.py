@@ -508,7 +508,6 @@ class AIAgent(Agent):
         self.update_knowledge()
         self.update_plan()
         status = self.plan["status"]
-
         if self.debug:
             self.print_knowledge()
         if self.did_someone_accept is False and self.message_send_last_move == 3:
@@ -593,7 +592,10 @@ class AIAgent(Agent):
         
         shoot_info = [] # used for format (x,y,path_len)
         for i in range(len(wumpi)):
-            target = random.choice(get_neighbors(self.knowledge, wumpi[i][0], wumpi[i][1], consider_obstacles=True)) # safe field adjacent to wumpus, the sender aims to go to
+            nei = get_neighbors(self.knowledge, wumpi[i][0], wumpi[i][1], consider_obstacles=True)
+            if not nei:
+                return []
+            target = random.choice(nei) # safe field adjacent to wumpus, the sender aims to go to
             path = a_star_search(self.knowledge, position, (target[0], target[1]), chance=self.risk_aversion)
             shoot_info.append((target[0], target[1], len(path) + GUESS_PADDING if path else GUESS_PADDING))
         

@@ -14,7 +14,7 @@ class Game():
     ''' p1 : [n, message] => in n moves the player can make a radio again, when message != "" -> the player made this radio last move ''' # TODO Maybe saving all radio calls
     radio_possible = {}
     killed_wumpi = 0
-    
+    dead = []
     def __init__(self, agents, grid_properties, game_properties, prints=True):
         """
         - executes the simulations
@@ -26,8 +26,9 @@ class Game():
             for i in range(len(agents)):
                 # sets the amount of gold to zero and the amount of arrows to the initial values
                 agents[i].ID = "p" + str(i + 1)
-                agents[i].gold = 0
+                agents[i].gold = 1000
                 agents[i].arrows = grid_properties["amount_arrows_start"]
+                self.dead.append(0)
                 self.radio_possible["p" + str(i+1)] = [0, ""]
 
         # variable to store the gold counts of the agents
@@ -36,7 +37,7 @@ class Game():
         # executes the simulations
         for _ in range(game_properties["num_games"]):
             gold_progress.append(self.simulate(agents, grid_properties, game_properties["prints"]))
-        
+        print("DEATHS: ", self.dead)
         # prints the gold evolution
         if game_properties["plot"]:
             self.plot_gold_evolution(gold_progress, agents)
@@ -114,6 +115,7 @@ class Game():
 
         for agent in agents:
             agent.status = Status.alive
+            agent.reset_plan()
 
         self.killed_wumpi = 0
         
@@ -260,7 +262,6 @@ class Game():
         gold = []
         for agent in agents:
             gold.append(agent.gold)
-
         return gold
 
 
@@ -549,23 +550,27 @@ class Game():
             
             if agent.position[0] < 0 or agent.position[0] >= len(grid):
                 agent.status = Status.dead
-                continue
+
             
             if agent.position[1] < 0 or agent.position[1] >= len(grid):
                 agent.status = Status.dead
-                continue
+
             
             if grid[agent.position[0]][agent.position[1]]["state"] == State.PIT:
                 agent.status = Status.dead
-                continue    
+
                     
             if grid[agent.position[0]][agent.position[1]]["state"] == State.S_WUMPUS:
                 agent.status = Status.dead
+
+            if agent.status == Status.dead:
+                agent.gold = max(0, agent.gold - 10)
+                self.dead[int(agent.ID[1:]) - 1] += 1
                 continue
             
             if grid[agent.position[0]][agent.position[1]]["state"] == State.L_WUMPUS:
                 agent.status = Status.dead
-                continue
+
             if grid[agent.position[0]][agent.position[1]]["state"] == State.ARMOR:
                 agent.armor += 1
                 grid[agent.position[0]][agent.position[1]]["state"] = None

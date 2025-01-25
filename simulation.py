@@ -66,7 +66,7 @@ if __name__ == '__main__':
         RandomAgent(size=size),
         RandomAgent(size=size, risk_aversion=0.99), 
         RandomAgent(size=size, risk_aversion=0.99), 
-        RandomAgent(size=size, risk_aversion=0.99),
+        RandomAgent(size=size, risk_aversion=0.5),
     ]
     
     # pass the following setup for random agents, they will always try to not step into pits/wumpi like an idiot
@@ -77,7 +77,7 @@ if __name__ == '__main__':
         RandomAgent(size=size)
     ] 
     
-    game = Game(standard_agents, grid_properties, game_properties)
+    game = Game(testing_agents, grid_properties, game_properties)
     
 
 # TODO: implement armor and swords

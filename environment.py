@@ -1,7 +1,7 @@
 import copy
 from enums import Plan
 import agent
-from enums import State, Perception, Status # for storing additional information in a grid's field
+from enums import State, Perception, Status, Plan # for storing additional information in a grid's field
 from random import randint, shuffle # for randomized world generation
 from utils import get_neighbors, append_unique, manhattan, derange
 import matplotlib.pyplot as plt
@@ -119,11 +119,6 @@ class Game():
         """
         simulates the game given the agents, grid properties
         """
-
-        for agent in agents:
-            agent.status = Status.alive
-            agent.reset_plan()
-
         self.killed_wumpi = 0
         
         # creates the initial grid on which the agents are placed after every move
@@ -138,6 +133,9 @@ class Game():
         max_number_of_moves = int(grid_properties["size"] * grid_properties["size"] * MOVES_SCALAR)
 
         for agent in agents:
+            # necessary, otherwise uses knowledge from prior game and dies
+            agent.reset()
+            
             purchase = int(agent.buy_arrows())
             if purchase <= 0:
                 continue
@@ -150,11 +148,11 @@ class Game():
                 agent.gold -= (agent.gold // grid_properties["arrow_price"]) * grid_properties["arrow_price"]
         
 
-        #runs the game loop
         move_counter = 0
         
         num_wumpi = grid_properties["num_s_wumpi"] + grid_properties["num_l_wumpi"]
         
+        # ---------- MAIN GAME LOOP ----------
         while not self.is_game_over(agents, num_wumpi) and max_number_of_moves > move_counter:            
             if prints:
                 print("\nMove: ", move_counter)
@@ -191,7 +189,7 @@ class Game():
 
                 agent.messages = temp_messages
                     
-             
+            # process agents' shots
             for agent in agents:
                 if agent.status == Status.dead:
                     continue
@@ -207,23 +205,23 @@ class Game():
                     else:
                         shots.append([agent.position[0], agent.position[1]+1])
                     agent.where_did_i_shoot = (shots[-1][0], shots[-1][1])
-                    # collect gold after shooting
-                    agent.plan["status"] = Plan.COLLECT_GOLD
+                    # collect gold after shooting (not working for large wumpus?)
+                    # agent.plan["status"] = Plan.COLLECT_GOLD
             if prints:
                 print("Shots: ", shots)
           
-            for agent in agents:
+            # for agent in agents:
                 
-                move=agent.move()
+            #     move=agent.move()
                 
-                if move== "up":
-                    agent.position[0]-=1
-                elif move== "down":
-                    agent.position[0]+=1
-                elif move== "left":
-                    agent.position[1]-=1
-                elif move== "right":
-                    agent.position[1]+=1
+            #     if move== "up":
+            #         agent.position[0]-=1
+            #     elif move== "down":
+            #         agent.position[0]+=1
+            #     elif move== "left":
+            #         agent.position[1]-=1
+            #     elif move== "right":
+            #         agent.position[1]+=1
                     
             move_counter += 1
             
@@ -517,7 +515,7 @@ class Game():
         return accessible_count
   
     def spawn_perceptions(self, grid):
-        """UNTESTED: Places perceptions for pits, small/large wumpi in neighboring fields in the grid"""
+        """Places perceptions for pits, small/large wumpi in neighboring fields in the grid"""
         # associate Items with Perceptions to be placed
         perceptions = {
             State.PIT: Perception.BREEZE,
@@ -525,6 +523,11 @@ class Game():
             State.L_WUMPUS: Perception.VERY_SMELLY
         }
         size = len(grid)
+        
+        # clean all existing perceptions to ensure correctness
+        for row in range(size):
+            for col in range(size):
+                grid[row][col]["perceptions"] = []
         
         for row in range(size):
             for col in range(size):
@@ -540,20 +543,42 @@ class Game():
         
     def update_grid(self, grid, agents, shots, prints, meeting_rewards):
         
+        must_update = False
         for pos in shots:
             if grid[pos[0]][pos[1]]["state"] == State.S_WUMPUS:
                 grid[pos[0]][pos[1]]["state"] = State.S_GOLD
                 self.killed_wumpi += 1
+                must_update = True
                 
             if grid[pos[0]][pos[1]]["state"] == State.L_WUMPUS and shots.count(pos) > 1:
                 grid[pos[0]][pos[1]]["state"] = State.L_GOLD
                 self.killed_wumpi += 1
-            
+                must_update = True
+        
+        # in case any wumpi got killed, removes their perceptions (alternatively do this specifically after killing a wumpus)
+        if must_update:
+            self.spawn_perceptions(grid)
         
         for agent in agents:
             
             if agent.status == Status.dead:
                 continue
+            
+            # optionally updates changed perceptions 
+            agent.perceptions = copy.copy(grid[agent.position[0]][agent.position[1]]["perceptions"])
+            agent.update_knowledge()
+            
+            # process agents' move decisions
+            move=agent.move()
+                
+            if move== "up":
+                agent.position[0]-=1
+            elif move== "down":
+                agent.position[0]+=1
+            elif move== "left":
+                agent.position[1]-=1
+            elif move== "right":
+                agent.position[1]+=1
             
             if agent.position[0] < 0 or agent.position[0] >= len(grid):
                 agent.status = Status.dead
@@ -588,14 +613,17 @@ class Game():
                 self.meeting(agent, other_agent, prints, meeting_rewards)
 
             grid[agent.position[0]][agent.position[1]]["agents"].append(agent)
-            self.spawn_perceptions(grid) # in case any wumpi got killed, removes their perceptions (alternatively do this specifically after killing a wumpus)
-        
 
              
     def meeting(self, agent1, agent2, prints, rm):
         """
         - defines the result of a meeting between two agents
         """
+        # avoid both agents exploiting repeated meetings by waiting on the same field 
+        if (agent1.plan["status"] == Plan.WAIT 
+            and agent2.plan["status"] == Plan.WAIT):
+            return 0
+        
         if prints:
             print("meeting: " + agent1.ID + " und " +agent2.ID)
         action_agent1 = agent1.meeting(agent2)

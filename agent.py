@@ -955,15 +955,11 @@ class DefensiveAgent(AIAgent):
 class AggressiveAgent(AIAgent):
 
     def __init__(self, size):
-            super().__init__(size)
-            self.plan = {
-                "type": "AGGRESSIVE",  
-                "goal": "hunt",       
-                "patience": 3,        
-                "status": "idle", 
-                "target_pos": [],     
-            }
-            self.last_meeting_results = {} 
+        super().__init__(size)
+        self.opinions = {}
+        self.knowledge = [[{"state": [], "blocks": []} for _ in range(size)] for _ in range(size)]
+        self.last_meeting_results = {}
+        self.target_pos = []  # Zielpositionen werden jetzt direkt verwaltet
 
     def buy_arrows(self):
             if self.gold >= 5:  
@@ -971,23 +967,19 @@ class AggressiveAgent(AIAgent):
             return 0
 
     def radio(self):
+        """
+        Der Agent verbreitet falsche Informationen über Wumpus-Positionen.
+        """
+        fake_info = []
+        for _ in range(3):  # Anzahl der falschen Informationen, die der Agent verbreitet
+            fake_pos = (random.randint(0, len(self.knowledge) - 1), random.randint(0, len(self.knowledge) - 1))
+            fake_info.append(fake_pos)
+        
         if self.debug:
-            print(f"Agent-{self.ID}: Spreading misinformation")
-        neighbors = get_neighbors(self.knowledge, self.position[0], self.position[1], consider_obstacles=False)
-        misinformation = [
-            (x, y)
-            for x, y in neighbors
-            if self.knowledge[x][y]["state"] != [State.S_WUMPUS]
-        ]
-        if misinformation:
-            fake_wumpus = misinformation[0]
-            self.broadcast_message(
-                f"Wumpus spotted at {fake_wumpus}",
-                target_agents=None 
-            )
-            return fake_wumpus
-        return None
-
+            print(f"Agent-{self.ID}: Spreading fake info about Wumpuses at {fake_info}")
+        
+        return fake_info
+        
     def shoot(self):
             if self.debug:
                 print(f"Agent-{self.ID}: Aggressive targets {self.plan['shoot_pos']}")
@@ -1005,12 +997,18 @@ class AggressiveAgent(AIAgent):
             return direction
 
     def meeting(self, agent):
-        result = self.last_meeting_results.get(agent.ID, "rob")  
+        """
+        Bei einer Begegnung mit einem anderen Agenten wird auf Vergeltung oder Kooperation entschieden.
+        """
+        result = self.last_meeting_results.get(agent.ID, "rob")
         return result
 
     def meeting_result(self, other_agent, result):
+        """
+        Speichert das Ergebnis der Begegnung.
+        """
         self.last_meeting_results[other_agent.ID] = result
-    
+
     def update_knowledge(self):
         super().update_knowledge()
         if not self.perceptions:
@@ -1025,11 +1023,17 @@ class AggressiveAgent(AIAgent):
 
     def mark_safe(self, position):
         x, y = position
-        self.knowledge[x][y] = "safe"
+        if "blocks" not in self.knowledge[x][y]:
+            self.knowledge[x][y]["blocks"] = []
+        self.knowledge[x][y]["state"] = [State.SAFE]
 
     def mark_dangerous(self, position, danger_type):
         x, y = position
-        self.knowledge[x][y] = danger_type
+        if "blocks" not in self.knowledge[x][y]:
+            self.knowledge[x][y]["blocks"] = []
+        self.knowledge[x][y]["state"] = [danger_type]
+
+
 
     def get_neighbors(self, position):
         x, y = position
@@ -1040,39 +1044,56 @@ class AggressiveAgent(AIAgent):
                 neighbors.append((nx, ny))
         return neighbors
 
-    def plan_action(self):
-            if self.plan["type"] == "RANDOM":
-                safe_moves = self.select_safe_moves()
-                if safe_moves:
-                    return random.choice(safe_moves)
-                return "wait"  
-            elif self.plan["type"] == "GO_TO":
-                goal_action = self.execute_a_star(self.plan["goal"])
-                return goal_action if goal_action else "wait"  
-            elif self.plan["type"] == "WAIT":
-                self.plan["patience"] -= 1
-                if self.plan["patience"] <= 0:
-                    self.plan = {"type": "RANDOM", "goal": None, "patience": 5, "status": "idle", "target_pos": []}
-                return "wait"
-            return "wait"  
-    
     def move(self):
-            next_move = self.plan_action()  
-            if next_move is None:
-                if self.debug:
-                    print(f"Agent-{self.ID}: No valid move, defaulting to wait.")
-                next_move = "wait"
-            if self.debug:
-                print(f"Agent-{self.ID}: Decided move: {next_move}")
-            return next_move
-    
-    def execute_a_star(self, goal):
-        return "move_to_goal"
+        """
+        Der Agent bewegt sich basierend auf seiner aktuellen Wahrnehmung und Strategie.
+        Wenn er sich auf die Jagd nach Wumpus begibt, nutzt er die Schießen-Logik.
+        """
+        if self.arrows > 0:
+            # Der Agent sucht nach Wumpi zum Schießen
+            direction = self.shoot()
+            if direction:
+                return direction
+
+        # Aggressiv zu Zielpositionen bewegen oder falsche Infos verbreiten
+        if self.plan["target_pos"]:
+            target = self.plan["target_pos"].pop(0)
+            move_action = self.navigate_to_target(target)
+            if move_action:
+                return move_action
+        else:
+            # Falls Goldpositionen bekannt sind, darauf zusteuern
+            gold_positions = [pos for row in self.knowledge for pos in row if 'gold' in pos['state']]
+            if gold_positions:
+                self.plan["target_pos"].extend(gold_positions)
+
+            # Falsche Informationen verbreiten und dann warten
+            fake_info = self.radio()
+            return "wait"
+
+        return
 
     def select_safe_moves(self):
         safe_moves = []
         for neighbor in self.get_neighbors(self.position):
             x, y = neighbor
-            if self.knowledge[x][y] == "safe":
+            if "state" in self.knowledge[x][y] and State.SAFE in self.knowledge[x][y]["state"]:
                 safe_moves.append(neighbor)
         return safe_moves
+
+    def navigate_to_target(self, target):
+        """
+        Implementiere eine Navigationslogik zum Ziel.
+        """
+        # Beispiel-Implementierung der Navigationslogik
+        x, y = self.position
+        tx, ty = target
+        if x < tx:
+            return "move_right"
+        elif x > tx:
+            return "move_left"
+        elif y < ty:
+            return "move_up"
+        elif y > ty:
+            return "move_down"
+        return None

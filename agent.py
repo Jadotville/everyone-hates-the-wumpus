@@ -541,16 +541,22 @@ class AIAgent(Agent):
                 next_move = convert_to_direction(self.position, path[1])
         elif status == Plan.COLLECT_GOLD:
             if self.where_did_i_shoot:
-                if self.where_did_i_shoot[0] < self.position[0]:
-                    next_move = "up"
-                elif self.where_did_i_shoot[0] > self.position[0]:
-                    next_move = "down"
-                elif self.where_did_i_shoot[1] < self.position[1]:
-                    next_move = "left"
-                elif self.where_did_i_shoot[1] > self.position[1]:
-                    next_move = "right"
-                self.reset_plan()
-                self.where_did_i_shoot = False
+                if Perception.VERY_SMELLY in self.perceptions:
+                    safe_moves = self.select_safe_moves()
+                    next_move = random.choice(safe_moves)
+                    self.reset_plan()
+                    self.where_did_i_shoot = False
+                else:
+                    if self.where_did_i_shoot[0] < self.position[0]:
+                        next_move = "up"
+                    elif self.where_did_i_shoot[0] > self.position[0]:
+                        next_move = "down"
+                    elif self.where_did_i_shoot[1] < self.position[1]:
+                        next_move = "left"
+                    elif self.where_did_i_shoot[1] > self.position[1]:
+                        next_move = "right"
+                    self.reset_plan()
+                    self.where_did_i_shoot = False
         if self.message_send_last_move == 1 or self.message_send_last_move == 2:
             self.message_send_last_move += 1
         return next_move

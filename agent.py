@@ -117,35 +117,6 @@ class Agent(ABC):
             any positive number: the agent buys the number of arrows
         '''  
         pass
-    
-class PlayerAgent(Agent):
-    """WIP: Agent that is controlled by the user."""
-    
-    # TODO: create a playable agent
-    
-    def move(self):
-        pass
-    
-    def conversation(self):
-        pass
-    
-    def shoot(self):
-        pass
-    
-    def meeting(self, agent):
-        pass
-    
-    def meeting_result(self, other_agent, result):
-        pass
-    
-    def found_gold(self):
-        pass
-    
-    def bidding(self, agent, gold):
-        pass
-
-    def radio(self):
-        pass
 
 class AIAgent(Agent):
     """Base logic for all AI-controlled Agents."""

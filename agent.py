@@ -961,58 +961,54 @@ class DefensiveAgent(AIAgent):
 class AggressiveAgent(AIAgent):
 
     def __init__(self, size):
-        super().__init__(size)
-        self.opinions = {}  
-        self.last_meeting_results = {}  
-        self.plan = {"type": "RANDOM", "goal": None, "patience": 5, "status": "idle", "target_pos": []}  
+            super().__init__(size)
+            self.plan = {
+                "type": "AGGRESSIVE",  
+                "goal": "hunt",       
+                "patience": 3,        
+                "status": "idle", 
+                "target_pos": [],     
+            }
+            self.last_meeting_results = {} 
 
     def buy_arrows(self):
-        if self.gold >= 10 and self.guess_wumpus():
-            return 1
-        return 0
+            if self.gold >= 5:  
+                return min(self.gold // 5, 3)  
+            return 0
 
-    def conversation(self):
-        pass
+    def radio(self):
+        if self.debug:
+            print(f"Agent-{self.ID}: Spreading misinformation")
+        neighbors = get_neighbors(self.knowledge, self.position[0], self.position[1], consider_obstacles=False)
+        misinformation = [
+            (x, y)
+            for x, y in neighbors
+            if self.knowledge[x][y]["state"] != [State.S_WUMPUS]
+        ]
+        if misinformation:
+            fake_wumpus = misinformation[0]
+            self.broadcast_message(
+                f"Wumpus spotted at {fake_wumpus}",
+                target_agents=None 
+            )
+            return fake_wumpus
+        return None
 
     def shoot(self):
-        if self.debug:
-            print(f"Agent-{self.ID}: Has targets {self.plan['shoot_pos']}")
-
-        if self.arrows <= 0 or (self.plan["patience"] and self.plan["patience"] > 0):
-            return None
-
-        wumpi = get_neighbors(self.knowledge, self.position[0], self.position[1], consider_obstacles=False)
-
-        wumpi = [
-            (wumpus[0], wumpus[1])
-            for wumpus in wumpi
-            if (wumpus[0], wumpus[1]) in self.plan["shoot_pos"] or self.knowledge[wumpus[0]][wumpus[1]]["state"] == [
-                State.S_WUMPUS]
-        ]
-        if not wumpi:
-            return None
-
-        if self.debug:
-            print("Agent-" + str(self.ID) + ": Found wumpi to shoot at " + str(wumpi))
-
-        if State.S_WUMPUS in self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"]:
-            self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"].remove(State.S_WUMPUS)
-            append_unique(self.knowledge[wumpi[0][0]][wumpi[0][1]]["blocks"], State.S_WUMPUS)
-
-        if not self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"]:
-            append_unique(self.knowledge[wumpi[0][0]][wumpi[0][1]]["state"], State.SAFE)
-
-        if wumpi[0] in self.plan["shoot_pos"]:
-            self.plan["shoot_pos"].remove(wumpi[0])
-            self.reset_wumpi_guess()
             if self.debug:
-                print(f"Agent-{self.ID}: Has targets {self.plan['shoot_pos']}")
-                self.print_knowledge()
+                print(f"Agent-{self.ID}: Aggressive targets {self.plan['shoot_pos']}")
+            if self.arrows <= 0:
+                return None
 
-        direction = convert_to_direction(self.position, wumpi[0])
-        if self.debug:
-            print("Agent-" + str(self.ID) + ": Shot an arrow in direction " + direction + " at " + str(wumpi[0]))
-        return direction
+            potential_targets = self.plan["shoot_pos"]
+            if not potential_targets:
+                return None
+
+            target = potential_targets.pop(0)
+            direction = convert_to_direction(self.position, target)
+            if self.debug:
+                print(f"Agent-{self.ID}: Aggressively shoots in direction {direction} at {target}")
+            return direction
 
     def meeting(self, agent):
         result = self.last_meeting_results.get(agent.ID, "rob")  
@@ -1020,7 +1016,7 @@ class AggressiveAgent(AIAgent):
 
     def meeting_result(self, other_agent, result):
         self.last_meeting_results[other_agent.ID] = result
-
+    
     def update_knowledge(self):
         super().update_knowledge()
         if not self.perceptions:

@@ -634,6 +634,7 @@ class AIAgent(Agent):
         Resets the agent's knowledge, plan, perception and life-state. Necessary upon starting the next game. Should be called from the environment.
         """
         # Reset knowledge
+        self.reset_plan()
         self.knowledge = [[{
                             "state": [], # assumes, that a field could have this state
                             "blocks": [] # assumes, that a field 100% cannot have this state
@@ -648,6 +649,7 @@ class AIAgent(Agent):
         self.did_someone_accept = False
         self.perceptions = None
         self.status = Status.alive
+        self.armor = 0
 
     def buy_arrows(self):
         budget = self.gold

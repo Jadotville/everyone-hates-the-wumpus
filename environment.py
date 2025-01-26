@@ -206,10 +206,9 @@ class Game():
                         shots.append([agent.position[0], agent.position[1]+1])
                     agent.where_did_i_shoot = (shots[-1][0], shots[-1][1])
                     # collect gold after shooting (not working for large wumpus?)
-                    # agent.plan["status"] = Plan.COLLECT_GOLD
+                    agent.plan["status"] = Plan.COLLECT_GOLD
             if prints:
                 print("Shots: ", shots)
-          
             # for agent in agents:
                 
             #     move=agent.move()
@@ -253,7 +252,6 @@ class Game():
                         self.radio_possible[agent.ID][1] = radio_call
                         self.radio_possible[agent.ID][0] = 5
                     else:
-                        # TODO: errorhandling
                         pass
                 else:
                     self.radio_possible[agent.ID][0] -= 1
@@ -567,7 +565,6 @@ class Game():
             # optionally updates changed perceptions 
             agent.perceptions = copy.copy(grid[agent.position[0]][agent.position[1]]["perceptions"])
             agent.update_knowledge()
-            
             # process agents' move decisions
             move=agent.move()
                 

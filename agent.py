@@ -11,6 +11,10 @@ MAX_ARROWS = 3 # inventory space for arrows
 ARROW_PRICE = 2 # from grid_properties in simulation.py
 
 class Agent(ABC):
+    # meeting from the move
+    who_to_meet = []
+    # radios thats accepted my task until i reset the task
+    who_accepted = []
     # when an agent sends a message, it will gets 1, when making a move += 1, when 3 it will look for an accept message
     message_send_last_move = False
     # turns into a tuple of coordinates, after shooting a wumpus to collect the gold
@@ -112,35 +116,6 @@ class Agent(ABC):
             0: the agent does not want to buy arrows
             any positive number: the agent buys the number of arrows
         '''  
-        pass
-    
-class PlayerAgent(Agent):
-    """WIP: Agent that is controlled by the user."""
-    
-    # TODO: create a playable agent
-    
-    def move(self):
-        pass
-    
-    def conversation(self):
-        pass
-    
-    def shoot(self):
-        pass
-    
-    def meeting(self, agent):
-        pass
-    
-    def meeting_result(self, other_agent, result):
-        pass
-    
-    def found_gold(self):
-        pass
-    
-    def bidding(self, agent, gold):
-        pass
-
-    def radio(self):
         pass
 
 class AIAgent(Agent):
@@ -284,6 +259,7 @@ class AIAgent(Agent):
         self.plan["target_pos"] = []
         self.message_send_last_move = False
         self.did_someone_accept = False
+        self.who_accepted = []
     
     def update_knowledge(self):
         """Updates the agent's knowledge base on pit/wumpus locations. Should be called every turn"""
@@ -374,6 +350,8 @@ class AIAgent(Agent):
                     if message_accept[1][0] == "accept":
                         if message_accept[1][1] == self.ID:
                             self.did_someone_accept = True
+                            if message_accept[0] != self.ID:
+                                self.who_accepted.append(message_accept[0])
             return
         if self.debug:
             print("Agent-" + str(self.ID) + ": Trying to accept a random message " + str(self.messages))
@@ -435,6 +413,8 @@ class AIAgent(Agent):
                     self.plan["target_pos"].append([s[0], s[1]])  # go to the senders shooting position
                     self.plan["shoot_pos"].append((w[0], w[1]))  # shoot at informed position
                     self.sendAcceptMessage = acceptMessageTo
+                    if self.ID != acceptMessageTo:
+                        self.who_accepted.append(acceptMessageTo)
                     if self.debug:
                         print("Agent-" + str(
                             self.ID) + ": Successfully acknowledged a message and updated its plan to killing a wumpus at " + str(
@@ -508,12 +488,18 @@ class AIAgent(Agent):
         self.update_knowledge()
         self.update_plan()
         status = self.plan["status"]
+        if self.position in self.plan["target_pos"]:
+            for meet in self.who_to_meet:
+                for accepted in self.who_accepted:
+                    if meet == accepted:
+                        self.plan["patience"] = 0
         if self.debug:
             self.print_knowledge()
         if self.did_someone_accept is False and self.message_send_last_move == 3:
             self.reset_plan()
             safe_moves = self.select_safe_moves()
             next_move = random.choice(safe_moves)
+            self.who_to_meet = []
             return next_move
         if self.message_send_last_move == 3:
             self.message_send_last_move = False
@@ -541,24 +527,32 @@ class AIAgent(Agent):
                 next_move = convert_to_direction(self.position, path[1])
         elif status == Plan.COLLECT_GOLD:
             if self.where_did_i_shoot:
-                if self.where_did_i_shoot[0] < self.position[0]:
-                    next_move = "up"
-                elif self.where_did_i_shoot[0] > self.position[0]:
-                    next_move = "down"
-                elif self.where_did_i_shoot[1] < self.position[1]:
-                    next_move = "left"
-                elif self.where_did_i_shoot[1] > self.position[1]:
-                    next_move = "right"
-                self.reset_plan()
-                self.where_did_i_shoot = False
+                if Perception.VERY_SMELLY in self.perceptions:
+                    safe_moves = self.select_safe_moves()
+                    next_move = random.choice(safe_moves)
+                    self.reset_plan()
+                    self.where_did_i_shoot = False
+                else:
+                    if self.where_did_i_shoot[0] < self.position[0]:
+                        next_move = "up"
+                    elif self.where_did_i_shoot[0] > self.position[0]:
+                        next_move = "down"
+                    elif self.where_did_i_shoot[1] < self.position[1]:
+                        next_move = "left"
+                    elif self.where_did_i_shoot[1] > self.position[1]:
+                        next_move = "right"
+                    self.reset_plan()
+                    self.where_did_i_shoot = False
         if self.message_send_last_move == 1 or self.message_send_last_move == 2:
             self.message_send_last_move += 1
+        self.who_to_meet = []
         return next_move
     
     def conversation(self):
         pass
     
     def meeting(self, agent):
+        self.who_to_meet.append(agent.ID)
         pass
     
     def meeting_result(self, other_agent, result):

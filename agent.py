@@ -70,7 +70,7 @@ class Agent(ABC):
     def meeting(self, agent):
         """
         - if a meeting is called, the agent shares the same field with other agents and can interact with them
-        - possible interactions: chat, rob, nothing
+        - possible interactions: rob, nothing
         """
         pass
     
@@ -698,8 +698,14 @@ class RightAgent(AIAgent):
         content.append(message_chosen)
 
         return content
-    
-       
+
+
+class RandomMeetingAgent(AIAgent):
+
+    def meeting(self, agent):
+        return random.choice(["rob", "nothing"])
+
+
 class RandomAgent(AIAgent):
     """Agent that moves randomly."""
     

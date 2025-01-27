@@ -1,5 +1,5 @@
 from environment import Game
-from agent import RandomAgent, RightAgent, RandomBadAgent, CooperativeAgent, DefensiveAgent, AggressiveAgent, AIAgent
+from agent import RandomAgent, RightAgent, RandomBadAgent, CooperativeAgent, DefensiveAgent, AggressiveAgent, AIAgent, RandomMeetingAgent
 from enums import Plan
 
 if __name__ == '__main__':
@@ -53,12 +53,10 @@ if __name__ == '__main__':
     
     # pass the following setup for a standart game
     standard_agents = [
-        CooperativeAgent(size=size), 
-        RandomAgent(size=size), 
-        #RightAgent(size=size), 
         DefensiveAgent(size=size),
-        RandomBadAgent(size=size),
-        AggressiveAgent(size=size)
+        CooperativeAgent(size=size),
+        RandomMeetingAgent(size=size),
+        AggressiveAgent(size=size),
     ]  
     
     # pass the following setup for experimenting
@@ -77,6 +75,6 @@ if __name__ == '__main__':
         RandomAgent(size=size)
     ] 
     
-    game = Game(testing_agents, grid_properties, game_properties)
+    game = Game(standard_agents, grid_properties, game_properties)
     
 

@@ -19,8 +19,8 @@ if __name__ == '__main__':
         "large_gold": 10,   # Amount of gold for large gold
         "arrow_price": 2,   # Price for arrows
         "amount_arrows_start": 2, # Amount of arrows at the start
-        "meeting_rewards" : [[[0,    5 ],       [0,     -5]],       [[0,        5],     [0,     5]],
-                             [[0,    0],        [-5,       -5]],    [[5,        5],     [5,     5]]], # Rewards for meeting another agent
+        "meeting_rewards" : [[[-1,    4],       [-4,     -2]],       [[-1,        4],     [0,     4]],
+                             [[1,    0],        [-4,       -4]],    [[3,        3],     [3,     3]]], # Rewards for meeting another agent
                                                 #                     |  other player robs      other player does nothing
                                                 #         player robs |       [0]                     [1]
                                                 # player does nothing |       [2]                     [3]

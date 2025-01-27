@@ -19,8 +19,8 @@ if __name__ == '__main__':
         "large_gold": 10,   # Amount of gold for large gold
         "arrow_price": 2,   # Price for arrows
         "amount_arrows_start": 2, # Amount of arrows at the start
-        "meeting_rewards" : [[[-1,    4],       [-4,     -2]],       [[-1,        4],     [0,     4]],
-                             [[1,    0],        [-4,       -4]],    [[3,        3],     [3,     3]]], # Rewards for meeting another agent
+        "meeting_rewards" : [[[-1,    4],       [-4,     -2]],       [[0,        4],     [0,     4]],
+                             [[0,    0],        [-4,       -4]],    [[3,        3],     [3,     3]]], # Rewards for meeting another agent
                                                 #                     |  other player robs      other player does nothing
                                                 #         player robs |       [0]                     [1]
                                                 # player does nothing |       [2]                     [3]
@@ -32,8 +32,8 @@ if __name__ == '__main__':
         }
     
     game_properties = {
-        "num_games": 5,   # number of games to simulate
-        "prints": True,    # display the game's state in the console
+        "num_games": 1000,   # number of games to simulate
+        "prints": False,    # display the game's state in the console
         "plot": True,       # plot the evolution of total amount of gold per agent
     }
     
@@ -56,7 +56,6 @@ if __name__ == '__main__':
         DefensiveAgent(size=size),
         CooperativeAgent(size=size),
         RandomMeetingAgent(size=size),
-        AggressiveAgent(size=size),
     ]  
     
     # pass the following setup for experimenting

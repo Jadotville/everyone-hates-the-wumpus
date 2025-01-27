@@ -70,7 +70,7 @@ class Agent(ABC):
     def meeting(self, agent):
         """
         - if a meeting is called, the agent shares the same field with other agents and can interact with them
-        - possible interactions: chat, rob, nothing
+        - possible interactions: rob, nothing
         """
         pass
     
@@ -634,6 +634,7 @@ class AIAgent(Agent):
         Resets the agent's knowledge, plan, perception and life-state. Necessary upon starting the next game. Should be called from the environment.
         """
         # Reset knowledge
+        self.reset_plan()
         self.knowledge = [[{
                             "state": [], # assumes, that a field could have this state
                             "blocks": [] # assumes, that a field 100% cannot have this state
@@ -648,6 +649,7 @@ class AIAgent(Agent):
         self.did_someone_accept = False
         self.perceptions = None
         self.status = Status.alive
+        self.armor = 0
 
     def buy_arrows(self):
         budget = self.gold
@@ -696,8 +698,14 @@ class RightAgent(AIAgent):
         content.append(message_chosen)
 
         return content
-    
-       
+
+
+class RandomMeetingAgent(AIAgent):
+
+    def meeting(self, agent):
+        return random.choice(["rob", "nothing"])
+
+
 class RandomAgent(AIAgent):
     """Agent that moves randomly."""
     

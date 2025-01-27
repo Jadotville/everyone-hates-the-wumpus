@@ -123,7 +123,14 @@ class Game():
         
         # creates the initial grid on which the agents are placed after every move
         grid = self.grid_preperation(agents, grid_properties)
-        
+
+        # reset dig grid
+        self.dig_place = []
+        for i in range(grid_properties["size"]):
+            self.dig_place.append([])
+            for j in range(grid_properties["size"]):
+                self.dig_place[i].append(0)
+
         # prints the initial grid
         if prints:
             print(" initial Grid:")

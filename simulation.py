@@ -1,5 +1,5 @@
 from environment import Game
-from agent import RandomAgent, RightAgent, RandomBadAgent, CooperativeAgent, DefensiveAgent, AggressiveAgent, AIAgent
+from agent import RandomAgent, RightAgent, RandomBadAgent, CooperativeAgent, DefensiveAgent, AggressiveAgent, AIAgent, RandomMeetingAgent
 from enums import Plan
 
 if __name__ == '__main__':
@@ -19,8 +19,8 @@ if __name__ == '__main__':
         "large_gold": 10,   # Amount of gold for large gold
         "arrow_price": 2,   # Price for arrows
         "amount_arrows_start": 2, # Amount of arrows at the start
-        "meeting_rewards" : [[[0,    5 ],       [0,     -5]],       [[0,        5],     [0,     5]],
-                             [[0,    0],        [-5,       -5]],    [[5,        5],     [5,     5]]], # Rewards for meeting another agent
+        "meeting_rewards" : [[[-1,    4],       [-4,     -2]],       [[0,        4],     [0,     4]],
+                             [[0,    0],        [-4,       -4]],    [[3,        3],     [3,     3]]], # Rewards for meeting another agent
                                                 #                     |  other player robs      other player does nothing
                                                 #         player robs |       [0]                     [1]
                                                 # player does nothing |       [2]                     [3]
@@ -32,8 +32,8 @@ if __name__ == '__main__':
         }
     
     game_properties = {
-        "num_games": 5,   # number of games to simulate
-        "prints": True,    # display the game's state in the console
+        "num_games": 1000,   # number of games to simulate
+        "prints": False,    # display the game's state in the console
         "plot": True,       # plot the evolution of total amount of gold per agent
     }
     
@@ -53,12 +53,9 @@ if __name__ == '__main__':
     
     # pass the following setup for a standart game
     standard_agents = [
-        CooperativeAgent(size=size), 
-        RandomAgent(size=size), 
-        #RightAgent(size=size), 
         DefensiveAgent(size=size),
-        RandomBadAgent(size=size),
-        AggressiveAgent(size=size)
+        CooperativeAgent(size=size),
+        RandomMeetingAgent(size=size),
     ]  
     
     # pass the following setup for experimenting
@@ -77,6 +74,6 @@ if __name__ == '__main__':
         RandomAgent(size=size)
     ] 
     
-    game = Game(testing_agents, grid_properties, game_properties)
+    game = Game(standard_agents, grid_properties, game_properties)
     
 

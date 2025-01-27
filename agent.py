@@ -968,7 +968,7 @@ class AggressiveAgent(AIAgent):
         self.knowledge = [[{"state": [], "blocks": []} for _ in range(size)] for _ in range(size)]
         self.last_meeting_results = {}
         self.plan = {"status": None, "target_pos": []}
-        self.target_pos = []  # Zielpositionen werden jetzt direkt verwaltet
+        self.target_pos = []  
         self.path = []
 
     def buy_arrows(self):
@@ -977,18 +977,43 @@ class AggressiveAgent(AIAgent):
         return 0
 
     def radio(self):
-        """
-        Der Agent verbreitet falsche Informationen über Wumpus-Positionen.
-        """
-        fake_info = []
-        for _ in range(3):  # Anzahl der falschen Informationen, die der Agent verbreitet
-            fake_pos = (random.randint(0, len(self.knowledge) - 1), random.randint(0, len(self.knowledge) - 1))
-            fake_info.append(fake_pos)
-        
-        if self.debug:
-            print(f"Agent-{self.ID}: Spreading fake info about Wumpuses at {fake_info}")
-        
-        return fake_info
+        try:
+            if Perception.VERY_SMELLY in self.perceptions and self.arrows > 0:
+                wumpus_pos = self.guess_wumpus()
+
+                if not wumpus_pos or not isinstance(wumpus_pos, tuple) or len(wumpus_pos) != 2:
+                    if self.debug:
+                        print(f"Agent-{self.ID}: Unable to guess Wumpus position.")
+                    return []
+
+                agent_pos = self.position
+
+                shooting_pos = [agent_pos[0], agent_pos[1], 5]  
+
+            
+                message_content = f"w({wumpus_pos[0]},{wumpus_pos[1]}) p({agent_pos[0]},{agent_pos[1]}) s({shooting_pos[0]},{shooting_pos[1]},{shooting_pos[2]})"
+                if self.debug:
+                    print(f"Agent-{self.ID}: Broadcasting message - {message_content}")
+
+                fake_info = []
+                for _ in range(3):  
+                    fake_pos = (random.randint(0, len(self.knowledge) - 1), random.randint(0, len(self.knowledge) - 1))
+                    fake_info.append(fake_pos)
+                fake_message_content = f"fake_positions({','.join([f'({x},{y})' for x, y in fake_info])})"
+                if self.debug:
+                    print(f"Agent-{self.ID}: Broadcasting fake info - {fake_message_content}")
+
+                return ["inform", message_content, fake_message_content]
+
+            if self.debug:
+                print(f"Agent-{self.ID}: No message to broadcast.")
+            return []
+
+        except Exception as e:
+            if self.debug:
+                print(f"Agent-{self.ID}: Error in radio - {e}")
+            return []
+
 
     def shoot(self):
         if self.debug:
@@ -1068,18 +1093,16 @@ class AggressiveAgent(AIAgent):
                 return convert_to_direction(self.position, path[1])
             else:
                 self.reset_plan()
-                return "wait"  # Verhindert endlose Rekursion
+                return "wait"  
             
 
         if Perception.SMELLY in self.perceptions:
-            # Wumpus entdecken und Plan setzen, um ihn zu verfolgen
             targets = self.get_adjacent_positions_with_state(State.S_WUMPUS) + self.get_adjacent_positions_with_state(State.L_WUMPUS) # Ändere von State.WUMPUS zu State.L_WUMPUS
             if targets:
                 self.plan["status"] = Plan.GO_TO
                 self.plan["target_pos"] = [targets[0]]
-                return "wait"  # Warten auf den nächsten move-Aufruf, um den Plan auszuführen
+                return "wait" 
 
-        # Standardmäßig auf die Superklasse zurückgreifen
         return super().move()
 
     def update_plan(self):
@@ -1091,9 +1114,9 @@ class AggressiveAgent(AIAgent):
             else:
                 self.reset_plan()
         elif self.plan["status"] == Plan.WAIT:
-            pass  # Unendlich warten oder bis ein externes Ereignis eintritt
+            pass  
         else:
-            super().update_plan()  # Standardmäßig erkunden
+            super().update_plan()  
 
     def get_adjacent_positions_with_state(self, state):
         """Finde die nächsten Positionen mit dem angegebenen Zustand."""

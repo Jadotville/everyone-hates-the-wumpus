@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+
+import utils
 from enums import State, Perception, Gold_found, Status, Plan
 from utils import get_neighbors, a_star_search, convert_to_direction, append_unique, list_difference
 from random import random
@@ -1024,7 +1026,8 @@ class AggressiveAgent(AIAgent):
         potential_targets = self.plan["shoot_pos"]
         if not potential_targets:
             return None
-
+        if utils.manhattan(self.position, potential_targets[0]) != 1:
+            return None
         target = potential_targets.pop(0)
         direction = convert_to_direction(self.position, target)
         if self.debug:

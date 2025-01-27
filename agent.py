@@ -973,7 +973,7 @@ class AggressiveAgent(AIAgent):
 
     def buy_arrows(self):
         if self.gold >= 10:
-            return 2
+            return 1
         return 0
 
     def radio(self):

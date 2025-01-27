@@ -33,7 +33,7 @@ if __name__ == '__main__':
     
     game_properties = {
         "num_games": 1000,   # number of games to simulate
-        "prints": False,    # display the game's state in the console
+        "prints": True,    # display the game's state in the console
         "plot": True,       # plot the evolution of total amount of gold per agent
     }
     
@@ -56,6 +56,7 @@ if __name__ == '__main__':
         DefensiveAgent(size=size),
         CooperativeAgent(size=size),
         RandomMeetingAgent(size=size),
+        AggressiveAgent(size=size)
     ]  
     
     # pass the following setup for experimenting

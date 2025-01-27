@@ -1041,8 +1041,6 @@ class AggressiveAgent(AIAgent):
         if self.debug:
             print(f"Agent-{self.ID}: Meeting with Agent-{agent.ID}")
         result = self.last_meeting_results.get(agent.ID, "rob")
-        if result == "rob":
-            self.steal_gold(agent)
         return result
 
     def meeting_result(self, other_agent, result):
@@ -1146,10 +1144,8 @@ class AggressiveAgent(AIAgent):
         if State.S_WUMPUS in self.knowledge[x][y]["state"] or State.L_WUMPUS in self.knowledge[x][y]["state"]:
             if self.arrows > 0:
                 self.arrows -= 1
-                print(f"Agent-{self.ID}: Shoots a Wumpus!")
         if State.PIT in self.knowledge[x][y]["state"]:
             self.gold += 5  # Beispiel: Bei Ausbeutung eines Pits erhält der Agent Gold
-            print(f"Agent-{self.ID}: Exploits a Pit and gains gold!")
         if State.S_GOLD in self.knowledge[x][y]["state"] or State.L_GOLD in self.knowledge[x][y]["state"]:
             self.collect_gold()
 

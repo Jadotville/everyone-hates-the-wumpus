@@ -14,26 +14,27 @@ if __name__ == '__main__':
         "num_small_gold": 2,# Gold spawns
         "num_large_gold": 2,# Gold spawns
         "num_armor": 2,     # Armor spawns
-        # "num_swords": 2,    # Sword spawns
         "small_gold": 5,    # Amount of gold for small gold
         "large_gold": 10,   # Amount of gold for large gold
+        "amount_gold_start": 100000, # Amount of gold at the start
         "arrow_price": 2,   # Price for arrows
         "amount_arrows_start": 2, # Amount of arrows at the start
         "meeting_rewards" : [[[0,    5 ],       [0,     -5]],       [[0,        5],     [0,     5]],
-                             [[0,    0],        [-5,       -5]],    [[5,        5],     [5,     5]]], # Rewards for meeting another agent
-                                                #                     |  other player robs      other player does nothing
-                                                #         player robs |       [0]                     [1]
-                                                # player does nothing |       [2]                     [3]
-                                                # for each cell in upper grid:
-                                                #                     |  player has armor       player has no armor
-                                                #    player has armor |      [0][0]                  [0][1]
-                                                # player has no armor |      [1][0]                  [1][1]
+                             [[0,    0],        [-5,       -5]],    [[5,        5],     [5,     5]]], 
+                    # Rewards for meeting another agent
+                    #                     |  other player robs      other player does nothing
+                    #         player robs |       [0]                     [1]
+                    # player does nothing |       [2]                     [3]
+                    # for each cell in upper grid:
+                    #                     |  player has armor       player has no armor
+                    #    player has armor |      [0][0]                  [0][1]
+                    # player has no armor |      [1][0]                  [1][1]
 
         }
     
     game_properties = {
-        "num_games": 5,   # number of games to simulate
-        "prints": True,    # display the game's state in the console
+        "num_games": 1000,   # number of games to simulate
+        "prints": False,    # display the game's state in the console
         "plot": True,       # plot the evolution of total amount of gold per agent
     }
     
@@ -63,10 +64,10 @@ if __name__ == '__main__':
     
     # pass the following setup for experimenting
     testing_agents = [
-        AIAgent(size=size),
-        AIAgent(size=size, risk_aversion=0.99),
-        AIAgent(size=size, risk_aversion=0.99),
         AIAgent(size=size, risk_aversion=1),
+        AIAgent(size=size, risk_aversion=0.99),
+        AIAgent(size=size, risk_aversion=0.95),
+        AIAgent(size=size, risk_aversion=0.8),
     ]
     
     # pass the following setup for random agents, they will always try to not step into pits/wumpi like an idiot
@@ -77,6 +78,13 @@ if __name__ == '__main__':
         RandomAgent(size=size)
     ] 
     
-    game = Game(testing_agents, grid_properties, game_properties)
+    agentset1 = [
+        CooperativeAgent(size=size),
+        DefensiveAgent(size=size),
+        CooperativeAgent(size=size),
+        DefensiveAgent(size=size)
+    ]
+    
+    game = Game(agentset1, grid_properties, game_properties)
     
 

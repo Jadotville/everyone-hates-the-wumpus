@@ -349,7 +349,7 @@ class AIAgent(Agent):
         if not self.plan["status"] == Plan.RANDOM:
             for message_accept in self.messages.items():
                 if message_accept[1]:
-                    if message_accept[1][0] == "accept":
+                    if message_accept[1][0] == "agree":
                         if message_accept[1][1] == self.ID:
                             self.did_someone_accept = True
                             if message_accept[0] != self.ID:
@@ -565,7 +565,7 @@ class AIAgent(Agent):
         if (not self.plan["status"] == Plan.RANDOM):
             # already accepted plan but has to send accept message:
             if self.sendAcceptMessage is not False:
-                list = ["accept", self.sendAcceptMessage]
+                list = ["agree", self.sendAcceptMessage]
                 self.sendAcceptMessage = False
                 return list
             return []

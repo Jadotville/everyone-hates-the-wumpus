@@ -972,51 +972,53 @@ class AggressiveAgent(AIAgent):
         self.plan = {"status": None, "target_pos": []}
         self.target_pos = []  
         self.path = []
+        self.perceptions = []  
+        self.arrows = 3  
 
     def buy_arrows(self):
         if self.gold >= 10:
             return 1
         return 0
-
+     
     def radio(self):
-        try:
-            if Perception.VERY_SMELLY in self.perceptions and self.arrows > 0:
-                wumpus_pos = self.guess_wumpus()
+            try:
+                if Perception.VERY_SMELLY in self.perceptions and self.arrows > 0:
+                    wumpus_pos = self.guess_wumpus()
 
-                if not wumpus_pos or not isinstance(wumpus_pos, tuple) or len(wumpus_pos) != 2:
+                    if not wumpus_pos or not isinstance(wumpus_pos, tuple) or len(wumpus_pos) != 2:
+                        if self.debug:
+                            print(f"Agent-{self.ID}: Unable to guess Wumpus position.")
+                        return []
+
+                    agent_pos = self.position
+
+                    shooting_pos = [agent_pos[0], agent_pos[1], 5]  
+
+                
+                    message_content = f"w({wumpus_pos[0]},{wumpus_pos[1]}) p({agent_pos[0]},{agent_pos[1]}) s({shooting_pos[0]},{shooting_pos[1]},{shooting_pos[2]})"
                     if self.debug:
-                        print(f"Agent-{self.ID}: Unable to guess Wumpus position.")
-                    return []
+                        print(f"Agent-{self.ID}: Broadcasting message - {message_content}")
 
-                agent_pos = self.position
+                    fake_info = []
+                    for _ in range(3):  
+                        fake_pos = (random.randint(0, len(self.knowledge) - 1), random.randint(0, len(self.knowledge) - 1))
+                        fake_info.append(fake_pos)
+                    fake_message_content = f"fake_positions({','.join([f'({x},{y})' for x, y in fake_info])})"
+                    if self.debug:
+                        print(f"Agent-{self.ID}: Broadcasting fake info - {fake_message_content}")
 
-                shooting_pos = [agent_pos[0], agent_pos[1], 5]  
+                    return ["inform", message_content, fake_message_content]
 
-            
-                message_content = f"w({wumpus_pos[0]},{wumpus_pos[1]}) p({agent_pos[0]},{agent_pos[1]}) s({shooting_pos[0]},{shooting_pos[1]},{shooting_pos[2]})"
                 if self.debug:
-                    print(f"Agent-{self.ID}: Broadcasting message - {message_content}")
+                    print(f"Agent-{self.ID}: No message to broadcast.")
+                return []
 
-                fake_info = []
-                for _ in range(3):  
-                    fake_pos = (random.randint(0, len(self.knowledge) - 1), random.randint(0, len(self.knowledge) - 1))
-                    fake_info.append(fake_pos)
-                fake_message_content = f"fake_positions({','.join([f'({x},{y})' for x, y in fake_info])})"
+            except Exception as e:
                 if self.debug:
-                    print(f"Agent-{self.ID}: Broadcasting fake info - {fake_message_content}")
+                    print(f"Agent-{self.ID}: Error in radio - {e}")
+                return []
 
-                return ["inform", message_content, fake_message_content]
-
-            if self.debug:
-                print(f"Agent-{self.ID}: No message to broadcast.")
-            return []
-
-        except Exception as e:
-            if self.debug:
-                print(f"Agent-{self.ID}: Error in radio - {e}")
-            return []
-
-
+   
     def shoot(self):
         if self.debug:
             print(f"Agent-{self.ID}: Aggressive targets {self.plan['shoot_pos']}")

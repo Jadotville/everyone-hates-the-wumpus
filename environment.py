@@ -27,7 +27,7 @@ class Game():
             for i in range(len(agents)):
                 # sets the amount of gold to zero and the amount of arrows to the initial values
                 agents[i].ID = "p" + str(i + 1)
-                agents[i].gold = 1000
+                agents[i].gold = grid_properties["amount_gold_start"]
                 agents[i].arrows = grid_properties["amount_arrows_start"]
                 self.dead.append(0)
                 self.radio_possible["p" + str(i+1)] = [0, ""]

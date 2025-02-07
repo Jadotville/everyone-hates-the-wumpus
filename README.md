@@ -6,4 +6,4 @@ This is one of the homework projects of the "Intelligent Softwareagents" lecture
 
 ## How to use
 - After cloning, run "py simulation.py"
-- You can optionally configure grid_properties/game_properties to your liking
+- You can optionally configure grid_properties/game_properties/matrix values to your liking

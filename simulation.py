@@ -22,19 +22,11 @@ if __name__ == '__main__':
         "num_armor": 2,     # Armor spawns
         "small_gold": 5,    # Amount of gold for small gold
         "large_gold": 10,   # Amount of gold for large gold
-        "amount_gold_start": 100000, # Amount of gold at the start
         "arrow_price": 2,   # Price for arrows
         "amount_arrows_start": 2, # Amount of arrows at the start
+        "amount_gold_start": 100000, # Amount of gold at the start
         "meeting_rewards" : [[[-both_rob_both_armor,    one_rob_one_nothing],       [-one_rob_one_nothing,     -both_rob]],       [[rob_against_armor,        one_rob_one_nothing],     [rob_against_armor,     one_rob_one_nothing]],
                              [[rob_against_armor,    rob_against_armor],        [-one_rob_one_nothing,       -one_rob_one_nothing]],    [[both_do_nothing,        both_do_nothing],     [both_do_nothing,     both_do_nothing]]], # Rewards for meeting another agent
-                                                #                     |  other player robs      other player does nothing
-                                                #         player robs |       [0]                     [1]
-                                                # player does nothing |       [2]                     [3]
-                                                # for each cell in upper grid:
-                                                #                     |  player has armor       player has no armor
-                                                #    player has armor |      [0][0]                  [0][1]
-                                                # player has no armor |      [1][0]                  [1][1]
-
         }
     
     game_properties = {

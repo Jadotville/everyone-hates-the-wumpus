@@ -1,11 +1,17 @@
 from environment import Game
-from agent import RandomAgent, RightAgent, RandomBadAgent, CooperativeAgent, DefensiveAgent, AggressiveAgent, AIAgent
+from agent import RandomAgent, RightAgent, RandomBadAgent, CooperativeAgent, DefensiveAgent, AggressiveAgent, AIAgent, RandomMeetingAgent
 from enums import Plan
 
 if __name__ == '__main__':
     
     # ------ GAME SETTINGS ------
-    
+
+    one_rob_one_nothing = 4
+    both_do_nothing= 3
+    both_rob = 2
+    both_rob_both_armor = 1
+    rob_against_armor = 0
+
     grid_properties = {
         "size": 7,          # Grid size: must be odd
         "num_pits": 1,      # Pits: this should be pretty low
@@ -19,16 +25,15 @@ if __name__ == '__main__':
         "amount_gold_start": 100000, # Amount of gold at the start
         "arrow_price": 2,   # Price for arrows
         "amount_arrows_start": 2, # Amount of arrows at the start
-        "meeting_rewards" : [[[0,    5 ],       [0,     -5]],       [[0,        5],     [0,     5]],
-                             [[0,    0],        [-5,       -5]],    [[5,        5],     [5,     5]]], 
-                    # Rewards for meeting another agent
-                    #                     |  other player robs      other player does nothing
-                    #         player robs |       [0]                     [1]
-                    # player does nothing |       [2]                     [3]
-                    # for each cell in upper grid:
-                    #                     |  player has armor       player has no armor
-                    #    player has armor |      [0][0]                  [0][1]
-                    # player has no armor |      [1][0]                  [1][1]
+        "meeting_rewards" : [[[-both_rob_both_armor,    one_rob_one_nothing],       [-one_rob_one_nothing,     -both_rob]],       [[rob_against_armor,        one_rob_one_nothing],     [rob_against_armor,     one_rob_one_nothing]],
+                             [[rob_against_armor,    rob_against_armor],        [-one_rob_one_nothing,       -one_rob_one_nothing]],    [[both_do_nothing,        both_do_nothing],     [both_do_nothing,     both_do_nothing]]], # Rewards for meeting another agent
+                                                #                     |  other player robs      other player does nothing
+                                                #         player robs |       [0]                     [1]
+                                                # player does nothing |       [2]                     [3]
+                                                # for each cell in upper grid:
+                                                #                     |  player has armor       player has no armor
+                                                #    player has armor |      [0][0]                  [0][1]
+                                                # player has no armor |      [1][0]                  [1][1]
 
         }
     
